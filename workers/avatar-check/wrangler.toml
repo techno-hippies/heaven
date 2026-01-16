@@ -1,0 +1,11 @@
+name = "neodate-avatar-check"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "neodate-avatars"
+
+# Secrets (set via `wrangler secret put`):
+# OPENROUTER_API_KEY

@@ -1,0 +1,13 @@
+# Environment variables (contains private keys!)
+.env
+.env.*
+
+# Foundry build artifacts
+out/
+cache/
+
+# Broadcast files (contain deployment details)
+broadcast/
+
+# Node modules (if using npm for anything)
+node_modules/

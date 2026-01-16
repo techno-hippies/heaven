@@ -1,0 +1,5 @@
+export { WelcomePage } from './Welcome'
+export { OnboardingPage } from './Onboarding'
+export { HomePage } from './Home'
+export { MessagesPage } from './Messages'
+export { ProfilePage } from './Profile'

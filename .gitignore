@@ -1,0 +1,29 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build outputs
+dist
+out
+build
+*.tgz
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# caches
+.cache
+*.tsbuildinfo

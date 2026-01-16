@@ -1,0 +1,30 @@
+{
+  "name": "noir-date-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "phosphor-solid": "1.1.5",
+    "solid-js": "^1.9.3",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.18",
+    "storybook": "^10.1.4",
+    "storybook-solidjs-vite": "^10.0.9",
+    "tailwindcss": "^4.1.12",
+    "typescript": "5.9.3",
+    "vite": "7.3.1",
+    "vite-plugin-solid": "2.11.10"
+  }
+}

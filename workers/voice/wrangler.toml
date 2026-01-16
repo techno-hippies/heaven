@@ -1,0 +1,21 @@
+name = "neodate-voice"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# LLM provider (Groq)
+LLM_BASE_URL = "https://api.groq.com/openai/v1"
+LLM_MODEL = "qwen/qwen3-32b"
+# Agora
+AGORA_REST_BASE = "https://api.agora.io"
+AGORA_CUSTOM_LLM_BEARER_PREFIX = "neo_"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "neodate-voice"
+database_id = "17a75aea-374c-46f5-b80d-be9144485955"
+
+# Secrets (copied from hp-voice-worker):
+# JWT_SECRET, LLM_API_KEY, AGORA_APP_ID, AGORA_APP_CERT, AGORA_REST_AUTH
+# ELEVENLABS_API_KEY, HONCHO_API_KEY, PSEUDONYM_SECRET

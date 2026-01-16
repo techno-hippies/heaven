@@ -1,0 +1,24 @@
+{
+  "name": "neodate-voice",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create neodate-voice",
+    "db:migrate": "wrangler d1 execute neodate-voice --file=schema.sql",
+    "db:migrate:local": "wrangler d1 execute neodate-voice --local --file=schema.sql"
+  },
+  "dependencies": {
+    "agora-token": "^2.0.3",
+    "ethers": "^6.13.5",
+    "hono": "^4.6.0",
+    "jose": "^5.9.0",
+    "nanoid": "^5.0.9"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.99.0"
+  }
+}
