@@ -115,7 +115,7 @@ const DialogTitle: ParentComponent<{ class?: string }> = (props) => {
 const DialogDescription: ParentComponent<{ class?: string }> = (props) => {
   return (
     <KobalteDialog.Description
-      class={cn('text-sm text-muted-foreground', props.class)}
+      class={cn('text-muted-foreground', props.class)}
     >
       {props.children}
     </KobalteDialog.Description>

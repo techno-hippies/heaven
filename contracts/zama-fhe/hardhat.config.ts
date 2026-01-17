@@ -3,6 +3,7 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@typechain/hardhat";
+import "dotenv/config";
 import "hardhat-deploy";
 import "hardhat-gas-reporter";
 import type { HardhatUserConfig } from "hardhat/config";
@@ -12,10 +13,13 @@ import "solidity-coverage";
 import "./tasks/accounts";
 import "./tasks/FHECounter";
 
-// Run 'npx hardhat vars setup' to see the list of variables that need to be set
-
+// Load from .env or fallback to hardhat vars
+const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 const MNEMONIC: string = vars.get("MNEMONIC", "wood bridge hire effort plate scrap gallery reduce era cake finish verb");
 const INFURA_API_KEY: string = vars.get("INFURA_API_KEY", "");
+
+// Sepolia RPC (Zama fhEVM now runs on Sepolia + coprocessor)
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL ?? "https://eth-sepolia.public.blastapi.io";
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -48,14 +52,11 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       url: "http://localhost:8545",
     },
+    // Sepolia - Zama fhEVM runs here via coprocessor + relayer
     sepolia: {
-      accounts: {
-        mnemonic: MNEMONIC,
-        path: "m/44'/60'/0'/0/",
-        count: 10,
-      },
+      url: SEPOLIA_RPC_URL,
       chainId: 11155111,
-      url: "https://ethereum-sepolia-rpc.publicnode.com",
+      accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],
     },
   },
   paths: {

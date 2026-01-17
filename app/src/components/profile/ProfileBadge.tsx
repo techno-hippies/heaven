@@ -3,12 +3,14 @@ import { cn } from '@/lib/utils'
 import { Icon } from '@/components/icons'
 
 export interface ProfileBadgeProps {
-  /** Category label (e.g., "Looking for", "Religion") */
+  /** Category label (e.g., "Seeking", "Religion") */
   category: string
   /** Value (e.g., "Casual", "Socially") */
   value: string
   /** Whether this field is attested (passport-verified via Self.xyz) */
   attested?: boolean
+  /** Stack label above value (for mobile / compact layouts) */
+  stacked?: boolean
   /** Additional class names */
   class?: string
 }
@@ -18,8 +20,25 @@ export interface ProfileBadgeProps {
  *
  * - Body size (16px), category is medium weight, value is regular
  * - Attested fields show seal-check icon after the value
+ * - Use stacked={true} for 2-line layout (label above, value below)
  */
 export const ProfileBadge: Component<ProfileBadgeProps> = (props) => {
+  // Stacked layout: label on top, value below
+  if (props.stacked) {
+    return (
+      <div class={cn('flex flex-col', props.class)}>
+        <span class="text-sm text-muted-foreground">{props.category}</span>
+        <div class="flex items-center gap-1">
+          <span class="text-base font-medium text-foreground">{props.value}</span>
+          <Show when={props.attested}>
+            <Icon name="seal-check" weight="fill" class="text-sm text-blue-400 flex-shrink-0" />
+          </Show>
+        </div>
+      </div>
+    )
+  }
+
+  // Inline layout: Category: Value
   return (
     <div class={cn('flex items-center gap-1.5', props.class)}>
       <span class="text-base font-medium text-foreground whitespace-nowrap">{props.category}:</span>
@@ -165,7 +184,7 @@ export const GENDER_IDENTITY_LABELS: Record<GenderIdentity, string> = {
   5: 'Trans woman',
 }
 
-/** Looking for */
+/** Seeking */
 export type LookingFor = 1 | 2 | 3
 
 export const LOOKING_FOR_LABELS: Record<LookingFor, string> = {
@@ -219,14 +238,13 @@ export const FITNESS_BUCKET_LABELS: Record<FitnessBucket, string> = {
 // =============================================================================
 
 /** Kids status */
-export type Kids = 1 | 2 | 3 | 4 | 5
+export type Kids = 1 | 2 | 3 | 4
 
 export const KIDS_LABELS: Record<Kids, string> = {
-  1: "No kids — don't want",
-  2: 'No kids — want someday',
-  3: 'No kids — open/unsure',
-  4: 'Have kids — want more',
-  5: 'Have kids — done',
+  1: "Don't want kids",
+  2: 'Want kids',
+  3: 'Have kids, want more',
+  4: 'Have kids, all set',
 }
 
 /** Kids timeline */
@@ -242,17 +260,13 @@ export const KIDS_TIMELINE_LABELS: Record<KidsTimeline, string> = {
 }
 
 /** Relationship structure */
-export type RelationshipStructure = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+export type RelationshipStructure = 1 | 2 | 3 | 4
 
 export const RELATIONSHIP_STRUCTURE_LABELS: Record<RelationshipStructure, string> = {
-  1: 'Strictly monogamous',
-  2: 'Monogamish',
-  3: 'Open (sexual only)',
-  4: 'Polyamorous',
-  5: 'Relationship anarchy',
-  6: 'Swinging (together)',
-  7: 'Swinging (separate)',
-  8: "Don't know yet",
+  1: 'Monogamous',
+  2: 'Open',
+  3: 'Polyamorous',
+  4: 'Relationship anarchy',
 }
 
 /** Relationship status */
@@ -260,34 +274,31 @@ export type RelationshipStatus = 1 | 2 | 3 | 4 | 5
 
 export const RELATIONSHIP_STATUS_LABELS: Record<RelationshipStatus, string> = {
   1: 'Single',
-  2: 'Partnered',
+  2: 'In a relationship',
   3: 'Married',
-  4: 'Open',
-  5: 'Separated',
+  4: 'Separated',
+  5: 'Divorced',
 }
 
 /** Group play mode */
-export type GroupPlayMode = 1 | 2 | 3 | 4 | 5
+export type GroupPlayMode = 1 | 2 | 3
 
 export const GROUP_PLAY_MODE_LABELS: Record<GroupPlayMode, string> = {
   1: 'Not interested',
-  2: 'Maybe with right person',
-  3: 'Open to it',
-  4: 'Actively seeking',
-  5: 'Experienced',
+  2: 'Open to it',
+  3: 'Into it',
 }
 
 /** Religion */
-export type Religion = 1 | 2 | 3 | 4 | 5 | 6 | 7
+export type Religion = 1 | 2 | 3 | 4 | 5 | 6
 
 export const RELIGION_LABELS: Record<Religion, string> = {
   1: 'Not religious',
-  2: 'Spiritual',
-  3: 'Christian',
-  4: 'Jewish',
-  5: 'Muslim',
-  6: 'Buddhist/Hindu',
-  7: 'Other',
+  2: 'Christian',
+  3: 'Jewish',
+  4: 'Muslim',
+  5: 'Buddhist/Hindu',
+  6: 'Other',
 }
 
 /** Kink level */

@@ -1,71 +1,88 @@
-import { Component, createSignal, Show } from 'solid-js'
+import { Component, createSignal, Show, onMount, createEffect } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
 import { SwipeCard, type SwipeProfileData } from '@/components/swipe'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
+import { useDirectory, type ProfileWithAddress } from '@/lib/contracts'
 
-// Mock profiles for development
-const MOCK_PROFILES: SwipeProfileData[] = [
-  {
-    id: '0x1234...5678',
-    name: 'Sakura',
-    username: 'sakura.neodate',
-    photo: '/avatars/sakura.svg',
-    bio: 'Digital artist & coffee enthusiast. Looking for someone to explore new cafes with!',
-    ageBucket: 2,
-    biologicalSex: 1,
-    nationality: 'JPN',
-    genderIdentity: 2,
-    lookingFor: 3,
-    bodyBucket: 2,
-    fitnessBucket: 3,
-    smoking: 1,
-    drinking: 2,
-  },
-  {
-    id: '0x2345...6789',
-    name: 'Alex',
-    username: 'alex.neodate',
-    photo: '/avatars/hiroshi.svg',
-    bio: 'Software engineer by day, musician by night. Into hiking and board games.',
-    ageBucket: 3,
-    biologicalSex: 0,
-    nationality: 'USA',
-    genderIdentity: 1,
-    lookingFor: 2,
-    bodyBucket: 2,
-    fitnessBucket: 4,
-  },
-  {
-    id: '0x3456...7890',
-    name: 'Nova',
-    username: 'nova.neodate',
-    photo: '/avatars/sakura2.svg',
-    bio: 'Crypto native, art collector. Looking for meaningful connections.',
-    ageBucket: 2,
-    nationality: 'GBR',
-    genderIdentity: 3,
-    lookingFor: 3,
-    kinkLevel: 3,
-  },
+// Placeholder avatars for profiles without photos
+const PLACEHOLDER_AVATARS = [
+  '/avatars/sakura.svg',
+  '/avatars/hiroshi.svg',
+  '/avatars/sakura2.svg',
 ]
+
+// Names to assign to profiles (based on index)
+const PROFILE_NAMES = [
+  'Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey',
+  'Riley', 'Quinn', 'Avery', 'Parker', 'Skyler',
+]
+
+/**
+ * Convert on-chain profile to SwipeProfileData
+ * Note: Contract uses 0 = hidden, so we only pass non-zero values
+ */
+function toSwipeProfile(profile: ProfileWithAddress, index: number): SwipeProfileData & { datingInitialized: boolean } {
+  const name = PROFILE_NAMES[index % PROFILE_NAMES.length]
+
+  return {
+    id: profile.address,
+    name,
+    username: `${name.toLowerCase()}.neodate`,
+    photo: PLACEHOLDER_AVATARS[index % PLACEHOLDER_AVATARS.length],
+    datingInitialized: profile.datingInitialized,
+    // Cast to expected types - 0 means hidden so we use undefined
+    ageBucket: profile.ageBucket ? profile.ageBucket as SwipeProfileData['ageBucket'] : undefined,
+    genderIdentity: profile.genderIdentity ? profile.genderIdentity as SwipeProfileData['genderIdentity'] : undefined,
+    lookingFor: profile.lookingFor ? profile.lookingFor as SwipeProfileData['lookingFor'] : undefined,
+    bodyBucket: profile.bodyBucket ? profile.bodyBucket as SwipeProfileData['bodyBucket'] : undefined,
+    fitnessBucket: profile.fitnessBucket ? profile.fitnessBucket as SwipeProfileData['fitnessBucket'] : undefined,
+    smoking: profile.smoking ? profile.smoking as SwipeProfileData['smoking'] : undefined,
+    drinking: profile.drinking ? profile.drinking as SwipeProfileData['drinking'] : undefined,
+  }
+}
+
+type SwipeProfile = SwipeProfileData & { datingInitialized: boolean }
 
 export const HomePage: Component = () => {
   const navigate = useNavigate()
   const auth = useAuth()
+  const directory = useDirectory()
   const [currentIndex, setCurrentIndex] = createSignal(0)
+  const [swipeProfiles, setSwipeProfiles] = createSignal<SwipeProfile[]>([])
 
   const isOnboarded = () => localStorage.getItem('neodate:onboarded') === 'true'
   const isReady = () => auth.isAuthenticated() && isOnboarded()
 
-  const currentProfile = () => MOCK_PROFILES[currentIndex()]
-  const hasMore = () => currentIndex() < MOCK_PROFILES.length
+  // Load profiles from contract when ready
+  onMount(() => {
+    if (isReady()) {
+      directory.loadProfiles(0, 20)
+    }
+  })
 
-  // Second profile liked us
-  const likedYou = () => currentIndex() === 1
+  // Convert contract profiles to swipe format, filtering to dating-initialized only
+  createEffect(() => {
+    const profiles = directory.profiles()
+    if (profiles.length > 0) {
+      // Only show profiles that have initialized their Dating contract profile
+      const initialized = profiles.filter((p) => p.datingInitialized)
+      setSwipeProfiles(initialized.map((p, i) => toSwipeProfile(p, i)))
+    }
+  })
+
+  const currentProfile = () => swipeProfiles()[currentIndex()]
+  const hasMore = () => currentIndex() < swipeProfiles().length
+
+  // TODO: Check on-chain if they liked us
+  const likedYou = () => false
 
   const handleLike = () => {
-    console.log('Liked', currentProfile()?.name)
+    const profile = currentProfile()
+    if (profile) {
+      console.log('Liked', profile.name, profile.id)
+      // TODO: Call Dating.sendLike(profile.id)
+    }
     setCurrentIndex((i) => i + 1)
   }
 
@@ -127,22 +144,41 @@ export const HomePage: Component = () => {
   // Ready - show profiles
   return (
     <Show
-      when={hasMore()}
+      when={!directory.loading()}
       fallback={
         <div class="min-h-screen bg-background flex items-center justify-center">
           <div class="text-center">
-            <h2 class="text-2xl font-semibold text-foreground mb-2">No more profiles</h2>
-            <p class="text-base text-muted-foreground">Check back later!</p>
+            <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p class="text-base text-muted-foreground">Loading profiles...</p>
           </div>
         </div>
       }
     >
-      <SwipeCard
-        profile={currentProfile()!}
-        likedYou={likedYou()}
-        onLike={handleLike}
-        onPass={handlePass}
-      />
+      <Show
+        when={hasMore()}
+        fallback={
+          <div class="min-h-screen bg-background flex items-center justify-center">
+            <div class="text-center">
+              <h2 class="text-2xl font-semibold text-foreground mb-2">No more profiles</h2>
+              <p class="text-base text-muted-foreground">
+                {directory.totalCount() === 0
+                  ? 'No profiles yet. Be the first!'
+                  : 'Check back later!'}
+              </p>
+              <Show when={directory.error()}>
+                <p class="text-sm text-destructive mt-2">{directory.error()}</p>
+              </Show>
+            </div>
+          </div>
+        }
+      >
+        <SwipeCard
+          profile={currentProfile()!}
+          likedYou={likedYou()}
+          onLike={handleLike}
+          onPass={handlePass}
+        />
+      </Show>
     </Show>
   )
 }

@@ -9,6 +9,7 @@ import {
   type LookingFor,
   AGE_BUCKET_LABELS,
   GENDER_IDENTITY_LABELS,
+  REGION_BUCKET_LABELS,
   LOOKING_FOR_LABELS,
 } from './ProfileBadge'
 
@@ -155,6 +156,9 @@ export const ProfilePage: Component<ProfilePageProps> = (props) => {
 
             {/* 2-col field grid */}
             <div class={cn('grid grid-cols-2 gap-x-8 gap-y-3', props.profile.bio ? 'mt-4' : '')}>
+              <Show when={props.profile.regionBucket && props.profile.regionBucket > 0}>
+                <ProfileBadge category="Region" value={REGION_BUCKET_LABELS[props.profile.regionBucket]} />
+              </Show>
               <Show when={props.profile.ageBucket && props.profile.ageBucket > 0}>
                 <ProfileBadge category="Age" value={AGE_BUCKET_LABELS[props.profile.ageBucket]} attested />
               </Show>
@@ -197,8 +201,7 @@ export const ProfilePage: Component<ProfilePageProps> = (props) => {
                   class="flex-1"
                   onClick={props.onEdit}
                 >
-                  <Icon name="pencil" class="text-xl" />
-                  Edit Profile
+                  Edit
                 </Button>
               </Show>
             </div>
@@ -206,8 +209,11 @@ export const ProfilePage: Component<ProfilePageProps> = (props) => {
         </div>
       </div>
 
-      {/* Mobile Sticky Buttons */}
-      <div class="fixed bottom-0 left-0 right-0 backdrop-blur border-t border-border lg:hidden bg-background/95">
+      {/* Mobile Sticky Buttons - positioned above MobileFooter (h-16 = 64px) */}
+      <div
+        class="fixed left-0 right-0 backdrop-blur border-t border-border lg:hidden bg-background/95"
+        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+      >
         <div class="w-full max-w-lg mx-auto px-6 py-4 flex gap-3">
           <Show
             when={props.isOwnProfile}
@@ -238,8 +244,7 @@ export const ProfilePage: Component<ProfilePageProps> = (props) => {
               class="flex-1"
               onClick={props.onEdit}
             >
-              <Icon name="pencil" class="text-xl" />
-              Edit Profile
+              Edit
             </Button>
           </Show>
         </div>

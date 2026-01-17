@@ -128,23 +128,23 @@ export const Gender_TransWoman: Story = {
 }
 
 // =============================================================================
-// USER-SET: Looking For (Directory.sol)
+// USER-SET: Seeking (Directory.sol)
 // =============================================================================
 
 export const LookingFor_Casual: Story = {
-  args: { category: 'Looking for', value: LOOKING_FOR_LABELS[1] },
+  args: { category: 'Seeking', value: LOOKING_FOR_LABELS[1] },
 }
 
 export const LookingFor_Dating: Story = {
-  args: { category: 'Looking for', value: LOOKING_FOR_LABELS[2] },
+  args: { category: 'Seeking', value: LOOKING_FOR_LABELS[2] },
 }
 
 export const LookingFor_Relationship: Story = {
-  args: { category: 'Looking for', value: LOOKING_FOR_LABELS[3] },
+  args: { category: 'Seeking', value: LOOKING_FOR_LABELS[3] },
 }
 
 export const LookingFor_Marriage: Story = {
-  args: { category: 'Looking for', value: LOOKING_FOR_LABELS[4] },
+  args: { category: 'Seeking', value: LOOKING_FOR_LABELS[4] },
 }
 
 // =============================================================================
@@ -259,36 +259,20 @@ export const Kids_HaveDone: Story = {
 // PRIVATE: Relationship Structure (Dating.sol - encrypted)
 // =============================================================================
 
-export const Relationship_StrictlyMono: Story = {
+export const Relationship_Monogamous: Story = {
   args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[1] },
 }
 
-export const Relationship_Monogamish: Story = {
+export const Relationship_Open: Story = {
   args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[2] },
 }
 
-export const Relationship_OpenSexual: Story = {
+export const Relationship_Poly: Story = {
   args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[3] },
 }
 
-export const Relationship_OpenRomantic: Story = {
-  args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[4] },
-}
-
 export const Relationship_Anarchy: Story = {
-  args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[5] },
-}
-
-export const Relationship_SwingingTogether: Story = {
-  args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[6] },
-}
-
-export const Relationship_SwingingSeparate: Story = {
-  args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[7] },
-}
-
-export const Relationship_DontKnow: Story = {
-  args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[8] },
+  args: { category: 'Relationship', value: RELATIONSHIP_STRUCTURE_LABELS[4] },
 }
 
 // =============================================================================

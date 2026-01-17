@@ -4,20 +4,106 @@
 
 A privacy-first dating app using Zama's Fully Homomorphic Encryption (fhEVM) to enable encrypted compatibility matching without revealing user preferences or dealbreakers.
 
+## Package Manager
+
+Always use **bun** instead of npm:
+
+```bash
+bun install          # NOT npm install
+bun run <script>     # NOT npm run <script>
+bunx hardhat ...     # NOT npx hardhat ...
+```
+
 ## Quick Commands
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Compile contracts
-npx hardhat compile
+bunx hardhat compile
 
 # Run tests
-npx hardhat test test/DatingV2.ts
+bunx hardhat test test/DatingV2.ts
 
 # Run client encoding tests
 bun test client/encoding.test.ts
+
+# Check deployer balance
+bun run balance
+
+# Deploy to Sepolia
+bun run deploy
+
+# Seed fake profiles
+SEED_COUNT=10 bun run seed
+```
+
+## Deployed Contracts (Sepolia)
+
+| Contract | Address |
+|----------|---------|
+| Directory | [`0x41866647a334BBA898EBe2011C3b2971C1F3D5b5`](https://sepolia.etherscan.io/address/0x41866647a334BBA898EBe2011C3b2971C1F3D5b5) |
+| Dating | [`0x1282fF4F33eFA67ea4f85E462F5D73e2cfF25b07`](https://sepolia.etherscan.io/address/0x1282fF4F33eFA67ea4f85E462F5D73e2cfF25b07) |
+| PartnerLink | [`0xF4804Af42F062c962a22a9b54d1E060A9037506C`](https://sepolia.etherscan.io/address/0xF4804Af42F062c962a22a9b54d1E060A9037506C) |
+
+**Network:** Sepolia (chainId 11155111) with Zama fhEVM coprocessor
+
+**Deployer:** `0x03626B945ec2713Ea50AcE6b42a6f8650E0611B5`
+
+### Seeded Test Profiles
+
+5 test profiles in Directory (see `deployments/11155111-seed.json`):
+- alex, jordan, taylor, morgan, casey
+
+### Frontend Config
+
+Add to `app/.env`:
+
+```bash
+VITE_CHAIN_ID=11155111
+VITE_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+VITE_DIRECTORY_ADDRESS=0x41866647a334BBA898EBe2011C3b2971C1F3D5b5
+VITE_DATING_ADDRESS=0x1282fF4F33eFA67ea4f85E462F5D73e2cfF25b07
+VITE_PARTNERLINK_ADDRESS=0xF4804Af42F062c962a22a9b54d1E060A9037506C
+```
+
+### Next Steps
+
+1. **Frontend integration** - Create `useDirectory()` / `useDating()` hooks
+2. **More profiles** - `SEED_COUNT=20 bun run seed` (needs Sepolia ETH)
+3. **Test as user** - Connect wallet, browse profiles, submit likes
+
+## Deployment
+
+### Environment Setup
+
+Create `.env`:
+
+```bash
+# Shared deployer wallet (same as L1 registry)
+DEPLOYER_PRIVATE_KEY=0x...
+
+# Sepolia (Zama fhEVM runs here via coprocessor)
+SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+
+# Zama Relayer (for FHE operations)
+RELAYER_URL=https://relayer.testnet.zama.org
+GATEWAY_CHAIN_ID=10901
+```
+
+### Deploy
+
+```bash
+bun run deploy
+```
+
+Outputs to `deployments/11155111.json`.
+
+### Seed Profiles
+
+```bash
+SEED_COUNT=10 bun run seed
 ```
 
 ## Architecture
@@ -89,7 +175,7 @@ ID  Name                  Type         Domain              UNKNOWN
 2   GENDER_IDENTITY       Categorical  1-10                15
 3   KIDS                  Categorical  1-5                 15
 4   KIDS_TIMELINE         Categorical  1-6                 15
-5   RELATIONSHIP_STRUCTURE Categorical 1-8                 15
+5   RELATIONSHIP_STRUCTURE Categorical 1-4                 15
 6   SMOKING               Categorical  1-3                 15
 7   RELATIONSHIP_STATUS   Categorical  1-5                 15
 8   DRINKING              Categorical  1-3                 15
@@ -103,10 +189,10 @@ ID  Name                  Type         Domain              UNKNOWN
 | Value | Meaning |
 |-------|---------|
 | 1 | Single |
-| 2 | Partnered |
+| 2 | In a relationship |
 | 3 | Married |
-| 4 | Open relationship |
-| 5 | Separated/Divorcing |
+| 4 | Separated |
+| 5 | Divorced |
 | 15 | Unknown/unspecified |
 
 ### GROUP_PLAY_MODE Values
@@ -134,7 +220,7 @@ ID  Name                  Type         Domain              UNKNOWN
 
 **Categorical** (`prefMask: euint16`):
 - Bitmask where bit N = accept value N
-- `0xFFFF` (WILDCARD_MASK) = accept all (NONE policy)
+- `0x7FFF` (WILDCARD_MASK) = accept all known values (NONE policy)
 - Bit 15 = accept UNKNOWN
 
 **Numeric** (`prefMin/prefMax: euint8`):
@@ -166,7 +252,7 @@ If users set specific preferences on all attributes, they get "no one matches."
 
 | Mode | prefMask | Behavior | UX |
 |------|----------|----------|----|
-| **Signal** | `WILDCARD_MASK` (0xFFFF) | Always passes, revealed on match | "I prefer X but show me everyone" |
+| **Signal** | `WILDCARD_MASK` (0x7FFF) | Always passes known values, revealed on match | "I prefer X but show me everyone" |
 | **Filter** | Specific bits | Gates matching | "Only show me X" |
 
 - **Signal** = preference stored for revelation but doesn't gate matching
@@ -189,7 +275,7 @@ This ensures users get matches while still revealing shared preferences.
 ### Wildcard Mechanics
 
 **Categorical** (prefMask):
-- `WILDCARD_MASK = 0xFFFF` → accepts all values (bits 0-15 set)
+- `WILDCARD_MASK = 0x7FFF` → accepts all known values (bits 0-14 set)
 - Contract: `FHE.and(theirValue, myMask) != 0` always true with wildcard
 
 **Numeric** (prefMin/prefMax):
@@ -220,7 +306,7 @@ The UI has two distinct flows for each attribute:
 
 - User picks MULTIPLE values (e.g., "I want Male or Female")
 - Filter toggle controls IF it gates matching:
-  - **OFF** (default for most): `prefMask = WILDCARD_MASK` → shows everyone
+  - **OFF** (default for most): `prefMask = WILDCARD_MASK` → shows everyone (known values)
   - **ON**: `prefMask = selected bits` → hides non-matching profiles
 
 ### UI Helper Functions
@@ -361,8 +447,18 @@ contracts/zama-fhe/
 ├── client/
 │   ├── encoding.ts       # Attribute encoding helpers
 │   └── encoding.test.ts  # Client-side tests
+├── scripts/
+│   ├── deployAll.ts      # Deploy all contracts to fhEVM
+│   └── seedProfiles.ts   # Seed fake profiles for testing
+├── deploy/
+│   ├── deployDirectory.ts
+│   ├── deployDating.ts
+│   └── deployPartnerLink.ts
+├── deployments/
+│   └── <chainId>.json    # Deployed contract addresses
 ├── test/
 │   └── DatingV2.ts       # Hardhat tests
+├── .env                  # Environment config (not committed)
 └── CLAUDE.md             # This file
 ```
 

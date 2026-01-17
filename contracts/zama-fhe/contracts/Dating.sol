@@ -24,23 +24,23 @@ contract Dating is ZamaEthereumConfig {
     uint8 public constant EXACT_AGE = 0;           // Numeric: 18-254, 255=UNKNOWN (verified)
     uint8 public constant BIOLOGICAL_SEX = 1;      // Categorical: 0=M, 1=F, 15=UNKNOWN (verified, private by default)
     uint8 public constant GENDER_IDENTITY = 2;     // Categorical: 1=man, 2=woman, 3=non-binary, etc., 15=UNKNOWN
-    uint8 public constant KIDS = 3;                // Categorical: 1-5, 15=UNKNOWN
+    uint8 public constant KIDS = 3;                // Categorical: 1-4, 15=UNKNOWN
     uint8 public constant KIDS_TIMELINE = 4;       // Categorical: 1-6, 15=UNKNOWN
-    uint8 public constant RELATIONSHIP_STRUCTURE = 5; // Categorical: 1-8, 15=UNKNOWN
+    uint8 public constant RELATIONSHIP_STRUCTURE = 5; // Categorical: 1=Monogamous, 2=Open, 3=Poly, 4=Relationship anarchy, 15=UNKNOWN
     uint8 public constant SMOKING = 6;             // Categorical: 1-3, 15=UNKNOWN
-    uint8 public constant RELATIONSHIP_STATUS = 7; // Categorical: 1-5 (0→15 client-side), 15=UNKNOWN
+    uint8 public constant RELATIONSHIP_STATUS = 7; // Categorical: 1=Single,2=Relationship,3=Married,4=Separated,5=Divorced, 15=UNKNOWN
     uint8 public constant DRINKING = 8;            // Categorical: 1-3, 15=UNKNOWN
-    uint8 public constant RELIGION = 9;            // Categorical: 1-7, 15=UNKNOWN
+    uint8 public constant RELIGION = 9;            // Categorical: 1-6, 15=UNKNOWN
     uint8 public constant KINK_LEVEL = 10;         // Numeric: 1-7, 255=UNKNOWN
-    uint8 public constant GROUP_PLAY_MODE = 11;    // Categorical: 1-6, 15=UNKNOWN
+    uint8 public constant GROUP_PLAY_MODE = 11;    // Categorical: 1-3, 15=UNKNOWN
     uint8 public constant NUM_ATTRS = 12;
 
     // UNKNOWN sentinels
     uint8 public constant UNKNOWN_CATEGORICAL = 15;
     uint8 public constant UNKNOWN_NUMERIC = 255;
 
-    // Wildcard = accept all (NONE policy)
-    uint16 public constant WILDCARD_MASK = 0xFFFF;
+    // Wildcard = accept all known values (NONE policy)
+    uint16 public constant WILDCARD_MASK = 0x7FFF;
 
     // Bit 15 in prefMask means "accept UNKNOWN"
     uint16 public constant UNKNOWN_BIT = 1 << 15;
@@ -375,7 +375,10 @@ contract Dating is ZamaEthereumConfig {
             ebool knownPasses = FHE.or(isWildcard, inRange);
             return FHE.select(isUnknown, acceptUnknown, knownPasses);
         } else {
-            euint8 safeVal = _sanitizeCategorical(targetVal);
+            // Use attribute-specific sanitizer for RELATIONSHIP_STRUCTURE
+            euint8 safeVal = (attr == RELATIONSHIP_STRUCTURE)
+                ? _sanitizeRelationshipStructure(targetVal)
+                : _sanitizeCategorical(targetVal);
             euint16 valueBit = FHE.shl(FHE.asEuint16(1), safeVal);
             return FHE.ne(FHE.and(prefMask, valueBit), FHE.asEuint16(0));
         }
@@ -388,6 +391,18 @@ contract Dating is ZamaEthereumConfig {
     function _sanitizeCategorical(euint8 val) internal returns (euint8) {
         ebool outOfRange = FHE.gt(val, FHE.asEuint8(15));
         return FHE.select(outOfRange, FHE.asEuint8(UNKNOWN_CATEGORICAL), val);
+    }
+
+    /// @notice Sanitize RELATIONSHIP_STRUCTURE to valid domain (1-4, 15)
+    /// @dev Old values 5-14 (including old swinging values 6-8) map to UNKNOWN
+    function _sanitizeRelationshipStructure(euint8 val) internal returns (euint8) {
+        // Valid: 1, 2, 3, 4 (structure values), 15 (UNKNOWN)
+        // Invalid: 0 (no value 0 for categoricals), 5-14 (deprecated/invalid)
+        ebool tooLow = FHE.lt(val, FHE.asEuint8(1));   // catches 0
+        ebool tooHigh = FHE.gt(val, FHE.asEuint8(4));  // catches 5-14
+        ebool isUnknown = FHE.eq(val, FHE.asEuint8(UNKNOWN_CATEGORICAL));  // 15 is valid
+        ebool invalid = FHE.and(FHE.or(tooLow, tooHigh), FHE.not(isUnknown));
+        return FHE.select(invalid, FHE.asEuint8(UNKNOWN_CATEGORICAL), val);
     }
 
     function _sanitizeAge(euint8 val) internal returns (euint8) {
@@ -498,8 +513,13 @@ contract Dating is ZamaEthereumConfig {
                 shared1 = FHE.select(canShare1, out1, FHE.asEuint8(UNKNOWN_NUMERIC));
                 shared2 = FHE.select(canShare2, out2, FHE.asEuint8(UNKNOWN_NUMERIC));
             } else {
-                euint8 safe1 = _sanitizeCategorical(raw1);
-                euint8 safe2 = _sanitizeCategorical(raw2);
+                // Use attribute-specific sanitizer for RELATIONSHIP_STRUCTURE
+                euint8 safe1 = (attr == RELATIONSHIP_STRUCTURE)
+                    ? _sanitizeRelationshipStructure(raw1)
+                    : _sanitizeCategorical(raw1);
+                euint8 safe2 = (attr == RELATIONSHIP_STRUCTURE)
+                    ? _sanitizeRelationshipStructure(raw2)
+                    : _sanitizeCategorical(raw2);
 
                 // For categorical, UNKNOWN (15) is safe to "share" (client will drop it)
                 shared1 = FHE.select(share1, safe1, FHE.asEuint8(UNKNOWN_CATEGORICAL));

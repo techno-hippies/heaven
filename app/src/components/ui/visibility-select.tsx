@@ -22,17 +22,17 @@ const OPTIONS: VisibilityOption[] = [
   {
     value: 'public',
     label: 'Public',
-    description: 'Everyone can see this',
+    description: 'Shown on your profile',
   },
   {
     value: 'match',
-    label: 'Shared on match',
-    description: 'Only revealed after you both like each other',
+    label: 'Shared with matches',
+    description: 'Revealed after you match',
   },
   {
     value: 'private',
     label: 'Private',
-    description: 'Used for matching, never shown',
+    description: 'Only used for matching',
   },
 ]
 

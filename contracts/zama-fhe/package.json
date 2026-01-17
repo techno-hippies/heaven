@@ -46,6 +46,7 @@
     "chai": "^4.5.0",
     "chai-as-promised": "^8.0.1",
     "cross-env": "^7.0.3",
+    "dotenv": "17.2.3",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "ethers": "^6.15.0",
@@ -83,7 +84,10 @@
     "chain": "hardhat node --network hardhat --no-deploy",
     "deploy:localhost": "hardhat deploy --network localhost",
     "deploy:sepolia": "hardhat deploy --network sepolia",
-    "verify:sepolia": "hardhat verify --network sepolia"
+    "verify:sepolia": "hardhat verify --network sepolia",
+    "balance": "hardhat run scripts/checkBalance.ts --network sepolia",
+    "deploy": "hardhat run scripts/deployAll.ts --network sepolia",
+    "seed": "hardhat run scripts/seedProfiles.ts --network sepolia"
   },
   "overrides": {
     "ws@>=7.0.0 <7.5.10": ">=7.5.10",

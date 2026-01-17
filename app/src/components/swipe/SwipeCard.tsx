@@ -141,7 +141,7 @@ export const SwipeCard: Component<SwipeCardProps> = (props) => {
                 <ProfileBadge category="Gender" value={GENDER_IDENTITY_LABELS[profile().genderIdentity!]} />
               </Show>
               <Show when={profile().lookingFor}>
-                <ProfileBadge category="Looking for" value={LOOKING_FOR_LABELS[profile().lookingFor!]} />
+                <ProfileBadge category="Seeking" value={LOOKING_FOR_LABELS[profile().lookingFor!]} />
               </Show>
               <Show when={profile().bodyBucket}>
                 <ProfileBadge category="Body" value={BODY_BUCKET_LABELS[profile().bodyBucket!]} />

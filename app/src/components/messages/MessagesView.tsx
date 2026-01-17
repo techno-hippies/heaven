@@ -24,9 +24,11 @@ import {
   loadMessages,
   streamMessages,
   disconnect as disconnectXMTP,
+  isConnected as isXMTPConnected,
   type Dm,
   type DecodedMessage,
 } from '@/lib/xmtp'
+import { ConsentState, GroupMessageKind, SortDirection } from '@xmtp/browser-sdk'
 
 const IS_DEV = import.meta.env.DEV
 
@@ -34,6 +36,10 @@ const IS_DEV = import.meta.env.DEV
 export interface Chat {
   id: string
   name: string
+  /** Optional identity label for header (ENS/address) */
+  identityLabel?: string
+  /** Optional subtitle line for header */
+  subtitle?: string
   avatar?: string
   lastMessage: string
   timestamp: Date
@@ -54,23 +60,12 @@ const getAvatarUrl = (seed: string) =>
 const SCARLETT_CHAT: Chat = {
   id: 'scarlett',
   name: 'Scarlett',
+  identityLabel: 'Scarlett',
   avatar: getAvatarUrl('scarlett-ai'),
   lastMessage: "Hey, I'm Scarlett. Think of me as your life coach.",
   timestamp: new Date(),
   unreadCount: 1,
   isPinned: true,
-}
-
-/** Test XMTP chat - hardcoded for testing */
-const TEST_XMTP_ADDRESS = '0x03626B945ec2713Ea50AcE6b42a6f8650E0611B5'
-const TEST_XMTP_CHAT: Chat = {
-  id: 'test-xmtp',
-  name: 'XMTP Test',
-  avatar: getAvatarUrl(TEST_XMTP_ADDRESS),
-  lastMessage: 'Tap to start an encrypted chat...',
-  timestamp: new Date(),
-  unreadCount: 0,
-  peerAddress: TEST_XMTP_ADDRESS,
 }
 
 /** Default messages - Scarlett's intro */
@@ -83,19 +78,46 @@ const DEFAULT_MESSAGES: Record<string, Message[]> = {
 /**
  * Convert XMTP DecodedMessage to local Message format
  */
-function xmtpToLocalMessage(msg: DecodedMessage, myInboxId: string): Message {
+function getDisplayableXMTPContent(msg: DecodedMessage): string | null {
+  const isApplication =
+    msg.kind === GroupMessageKind.Application || msg.kind === 'application'
+  if (!isApplication) return null
+  const typeId = msg.contentType?.typeId
+  if (typeId !== 'text' && typeId !== 'markdown') return null
+  if (typeof msg.content === 'string') return msg.content
+  if (typeof msg.fallback === 'string' && msg.fallback.length > 0) {
+    return msg.fallback
+  }
+  return null
+}
+
+function xmtpToLocalMessage(msg: DecodedMessage, myInboxId: string): Message | null {
+  const content = getDisplayableXMTPContent(msg)
+  if (!content) return null
+
   return {
     id: msg.id,
-    content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+    content,
     sender: msg.senderInboxId === myInboxId ? 'user' : 'other',
     timestamp: msg.sentAt,
   }
 }
 
+function formatAddress(address: string): string {
+  if (address.length <= 12) return address
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function formatMatchLabel(address: string, date: Date): string {
+  const label = formatAddress(address)
+  const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `You liked ${label} on ${formattedDate}`
+}
+
 export const MessagesView: Component<{ class?: string }> = (props) => {
   const auth = useAuth()
   const [selectedChatId, setSelectedChatId] = createSignal<string | null>(null)
-  const [chats, setChats] = createSignal<Chat[]>([SCARLETT_CHAT, TEST_XMTP_CHAT])
+  const [chats, setChats] = createSignal<Chat[]>([SCARLETT_CHAT])
   const [messages, setMessages] = createSignal<Record<string, Message[]>>(DEFAULT_MESSAGES)
   const [isLoading, setIsLoading] = createSignal(false)
   const [isBotSpeaking, setIsBotSpeaking] = createSignal(false)
@@ -112,6 +134,11 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
 
   // XMTP message stream cleanup
   let messageStreamCleanup: (() => void) | null = null
+  let isInitializingXMTP = false
+  let activeXMTPChatId: string | null = null
+  let activeXMTPConversationId: string | null = null
+  const initializingConversations = new Set<string>()
+  let xmtpRefreshTimer: number | null = null
 
   // Initialize voice hook when authenticated
   createEffect(() => {
@@ -147,7 +174,13 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
     const a = auth.authData()
 
     if (p && a) {
-      initXMTP(p)
+      if (isXMTPConnected() || isInitializingXMTP) {
+        return
+      }
+      isInitializingXMTP = true
+      initXMTP(p).finally(() => {
+        isInitializingXMTP = false
+      })
     }
   })
 
@@ -158,39 +191,77 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
 
       const client = await initXMTPClient(pkpInfo, auth.signMessage)
 
-      // Load existing DM conversations
-      const dms = await listDMs()
-
-      if (IS_DEV) console.log('[MessagesView] Loaded', dms.length, 'XMTP conversations')
-
-      // Convert XMTP conversations to Chat format
-      const xmtpChats: Chat[] = await Promise.all(
-        dms.map(async (conv) => {
-          const lastMsg = await conv.lastMessage()
-          const members = await conv.members()
-
-          // Find peer (not us)
-          const peer = members.find(m => m.inboxId !== client.inboxId)
-          const peerAddress = peer?.accountIdentifiers?.[0]?.identifier || 'Unknown'
-
-          return {
-            id: conv.id,
-            name: peerAddress.slice(0, 6) + '...' + peerAddress.slice(-4),
-            avatar: getAvatarUrl(peerAddress),
-            lastMessage: typeof lastMsg?.content === 'string' ? lastMsg.content : 'No messages yet',
-            timestamp: lastMsg?.sentAt || new Date(),
-            unreadCount: 0,
-            peerAddress,
-            xmtpConversation: conv,
-          }
-        })
-      )
-
-      // Add XMTP chats below Scarlett and test chat
-      setChats([SCARLETT_CHAT, TEST_XMTP_CHAT, ...xmtpChats])
+      await refreshXMTPChats(client)
+      startXMTPRefresh(client)
 
     } catch (error) {
       console.error('[MessagesView] Failed to initialize XMTP:', error)
+    }
+  }
+
+  async function refreshXMTPChats(client?: NonNullable<ReturnType<typeof getClient>>) {
+    const activeClient = client || getClient()
+    if (!activeClient) return
+
+    // Load existing DM conversations (including consent-unknown)
+    const dms = await listDMs()
+
+    if (IS_DEV) console.log('[MessagesView] Loaded', dms.length, 'XMTP conversations')
+
+    // Convert XMTP conversations to Chat format
+    const xmtpChats: Chat[] = await Promise.all(
+      dms.map(async (conv) => {
+        const latestMessages = await conv.messages({
+          limit: 10n,
+          direction: SortDirection.Descending,
+          kind: GroupMessageKind.Application,
+        })
+        const previewMsg = latestMessages
+          .map(m => xmtpToLocalMessage(m, activeClient.inboxId))
+          .find((m): m is Message => m !== null)
+        const members = await conv.members()
+
+        // Find peer (not us)
+        const peer = members.find(m => m.inboxId !== activeClient.inboxId)
+        const peerAddress = peer?.accountIdentifiers?.[0]?.identifier || 'Unknown'
+        const matchDate = conv.createdAt || previewMsg?.timestamp
+
+        const displayName = peerAddress !== 'Unknown' ? formatAddress(peerAddress) : 'Unknown'
+
+        return {
+          id: conv.id,
+          name: displayName,
+          identityLabel: peerAddress !== 'Unknown' ? displayName : undefined,
+          subtitle: peerAddress !== 'Unknown' && matchDate
+            ? formatMatchLabel(peerAddress, matchDate)
+            : undefined,
+          avatar: getAvatarUrl(peerAddress),
+          lastMessage: previewMsg?.content || 'No messages yet',
+          timestamp: previewMsg?.timestamp || new Date(),
+          unreadCount: 0,
+          peerAddress,
+          xmtpConversation: conv,
+        }
+      })
+    )
+
+    // Add XMTP chats below Scarlett
+    setChats([SCARLETT_CHAT, ...xmtpChats])
+  }
+
+  function startXMTPRefresh(client: NonNullable<ReturnType<typeof getClient>>) {
+    if (xmtpRefreshTimer) return
+    xmtpRefreshTimer = window.setInterval(() => {
+      refreshXMTPChats(client).catch(error => {
+        if (IS_DEV) console.error('[MessagesView] Failed to refresh XMTP chats:', error)
+      })
+    }, 15000)
+  }
+
+  function stopXMTPRefresh() {
+    if (xmtpRefreshTimer) {
+      window.clearInterval(xmtpRefreshTimer)
+      xmtpRefreshTimer = null
     }
   }
 
@@ -199,6 +270,7 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
     if (messageStreamCleanup) {
       messageStreamCleanup()
     }
+    stopXMTPRefresh()
     disconnectXMTP()
   })
 
@@ -213,18 +285,43 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
         messageStreamCleanup()
         messageStreamCleanup = null
       }
+      activeXMTPChatId = null
+      activeXMTPConversationId = null
       return
     }
 
     // Skip if Scarlett (already has default messages)
-    if (chatId === 'scarlett') return
+    if (chatId === 'scarlett') {
+      activeXMTPChatId = null
+      activeXMTPConversationId = null
+      return
+    }
+
+    if (activeXMTPChatId && activeXMTPChatId !== chatId && messageStreamCleanup) {
+      messageStreamCleanup()
+      messageStreamCleanup = null
+    }
 
     // Load XMTP messages
     if (chat.xmtpConversation) {
+      if (
+        activeXMTPChatId === chatId &&
+        activeXMTPConversationId === chat.xmtpConversation.id
+      ) {
+        return
+      }
+      activeXMTPChatId = chatId
+      activeXMTPConversationId = chat.xmtpConversation.id
       loadXMTPMessagesFromConv(chatId, chat.xmtpConversation)
     } else if (chat.peerAddress) {
       // Create/get XMTP conversation for chats with peer address (like test chat)
-      initXMTPConversation(chatId, chat.peerAddress)
+      if (initializingConversations.has(chatId)) {
+        return
+      }
+      initializingConversations.add(chatId)
+      initXMTPConversation(chatId, chat.peerAddress).finally(() => {
+        initializingConversations.delete(chatId)
+      })
     }
   })
 
@@ -272,10 +369,39 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
     }
   }
 
+  function upsertXMTPMessage(chatId: string, localMsg: Message) {
+    setMessages(prev => {
+      const existing = prev[chatId] || []
+
+      if (existing.some(m => m.id === localMsg.id)) {
+        return prev
+      }
+
+      const optimisticIndex = existing.findIndex(
+        m => m.optimistic && m.sender === localMsg.sender && m.content === localMsg.content
+      )
+
+      if (optimisticIndex >= 0) {
+        const updated = existing.slice()
+        updated[optimisticIndex] = localMsg
+        return { ...prev, [chatId]: updated }
+      }
+
+      return { ...prev, [chatId]: [...existing, localMsg] }
+    })
+  }
+
   async function loadXMTPMessagesFromConv(chatId: string, conversation: Dm) {
     try {
       const client = getClient()
       const myInboxId = client?.inboxId ?? ''
+
+      if (conversation.consentState() === ConsentState.Unknown) {
+        conversation.updateConsentState(ConsentState.Allowed)
+      }
+      if (client) {
+        await client.conversations.syncAll([ConsentState.Allowed, ConsentState.Unknown])
+      }
 
       // Clean up previous stream
       if (messageStreamCleanup) {
@@ -283,23 +409,50 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
       }
 
       // Load existing messages
-      const xmtpMessages = await loadMessages(conversation)
-      const localMessages = xmtpMessages.map(m => xmtpToLocalMessage(m, myInboxId))
+      const xmtpMessages = await loadMessages(conversation, {
+        direction: SortDirection.Ascending,
+        kind: GroupMessageKind.Application,
+      })
+      const localMessages = xmtpMessages
+        .map(m => xmtpToLocalMessage(m, myInboxId))
+        .filter((m): m is Message => m !== null)
 
-      setMessages(prev => ({
-        ...prev,
-        [chatId]: localMessages,
-      }))
+      setMessages(prev => {
+        if (localMessages.length === 0 && (prev[chatId] || []).length > 0) {
+          return prev
+        }
+
+        const merged = [...(prev[chatId] || [])]
+        for (const msg of localMessages) {
+          const existingIndex = merged.findIndex(m => m.id === msg.id)
+          if (existingIndex >= 0) {
+            merged[existingIndex] = msg
+            continue
+          }
+
+          const optimisticIndex = merged.findIndex(
+            m => m.optimistic && m.sender === msg.sender && m.content === msg.content
+          )
+          if (optimisticIndex >= 0) {
+            merged[optimisticIndex] = msg
+          } else {
+            merged.push(msg)
+          }
+        }
+
+        merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+
+        return { ...prev, [chatId]: merged }
+      })
 
       // Start streaming new messages
       messageStreamCleanup = await streamMessages(
         conversation,
         (newMsg) => {
           const localMsg = xmtpToLocalMessage(newMsg, myInboxId)
-          setMessages(prev => ({
-            ...prev,
-            [chatId]: [...(prev[chatId] || []), localMsg],
-          }))
+          if (!localMsg) return
+
+          upsertXMTPMessage(chatId, localMsg)
 
           // Update chat preview
           setChats(prev => prev.map(c =>
@@ -353,6 +506,7 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
       content,
       sender: 'user',
       timestamp: new Date(),
+      optimistic: !!chat?.xmtpConversation,
     }
 
     setMessages(prev => ({
@@ -520,6 +674,8 @@ export const MessagesView: Component<{ class?: string }> = (props) => {
         <Conversation
           chatId={selectedChatId()!}
           name={selectedChat()?.name ?? ''}
+          identityLabel={selectedChat()?.identityLabel}
+          subtitle={selectedChat()?.subtitle}
           avatarUrl={selectedChat()?.avatar}
           online={selectedChat()?.online}
           isPinned={selectedChat()?.isPinned}

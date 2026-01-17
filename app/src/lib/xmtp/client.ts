@@ -7,6 +7,8 @@
 import {
   Client,
   IdentifierKind,
+  ConsentState,
+  type ListMessagesOptions,
   type Signer,
   type Dm,
   type DecodedMessage,
@@ -14,9 +16,13 @@ import {
 import type { PKPInfo } from '@/lib/lit'
 
 const IS_DEV = import.meta.env.DEV
+const XMTP_ENV = (import.meta.env.VITE_XMTP_ENV || (IS_DEV ? 'dev' : 'production')) as
+  | 'dev'
+  | 'production'
 
 // Singleton client instance
 let xmtpClient: Client | null = null
+let xmtpClientPromise: Promise<Client> | null = null
 
 /**
  * Convert hex string signature to Uint8Array
@@ -61,22 +67,32 @@ export async function initXMTPClient(
   if (xmtpClient) {
     return xmtpClient
   }
+  if (xmtpClientPromise) {
+    return xmtpClientPromise
+  }
 
   if (IS_DEV) console.log('[XMTP] Initializing client for:', pkpInfo.ethAddress)
 
-  try {
+  xmtpClientPromise = (async () => {
     const signer = createPKPSigner(pkpInfo, signMessage)
 
     xmtpClient = await Client.create(signer, {
-      env: import.meta.env.DEV ? 'dev' : 'production',
+      env: XMTP_ENV,
     })
 
     if (IS_DEV) console.log('[XMTP] Client initialized:', xmtpClient.inboxId)
 
     return xmtpClient
+  })()
+
+  try {
+    return await xmtpClientPromise
   } catch (error) {
+    xmtpClientPromise = null
     console.error('[XMTP] Failed to initialize client:', error)
     throw error
+  } finally {
+    xmtpClientPromise = null
   }
 }
 
@@ -113,24 +129,28 @@ export async function listDMs(): Promise<Dm[]> {
     throw new Error('XMTP client not initialized')
   }
 
-  await xmtpClient.conversations.sync()
-  return xmtpClient.conversations.listDms()
+  const consentStates = [ConsentState.Allowed, ConsentState.Unknown]
+  await xmtpClient.conversations.syncAll(consentStates)
+  return xmtpClient.conversations.listDms({ consentStates })
 }
 
 /**
  * Send a message to a conversation
  */
 export async function sendMessage(conversation: Dm, content: string): Promise<void> {
-  await conversation.send(content as unknown as Parameters<typeof conversation.send>[0])
+  await conversation.sendText(content)
   if (IS_DEV) console.log('[XMTP] Message sent')
 }
 
 /**
  * Load messages from a conversation
  */
-export async function loadMessages(conversation: Dm): Promise<DecodedMessage[]> {
+export async function loadMessages(
+  conversation: Dm,
+  options?: ListMessagesOptions
+): Promise<DecodedMessage[]> {
   await conversation.sync()
-  return conversation.messages()
+  return conversation.messages(options)
 }
 
 /**
@@ -169,6 +189,7 @@ export async function streamMessages(
  */
 export function disconnect(): void {
   xmtpClient = null
+  xmtpClientPromise = null
   if (IS_DEV) console.log('[XMTP] Disconnected')
 }
 

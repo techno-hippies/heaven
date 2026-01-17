@@ -10,6 +10,7 @@ import {
 import type { WalletClient } from 'viem'
 import type { PKPInfo, AuthData } from '@/lib/lit'
 import { clearAuthContext } from '@/lib/lit'
+import { isSessionExpiringSoon, saveSession } from '@/lib/lit/storage'
 import { clearVoiceAuthCache } from '@/lib/voice/api'
 import {
   wagmiConfig,
@@ -304,11 +305,16 @@ export function AuthProvider(props: ParentProps) {
 
     const lit = await loadLit()
 
-    // Get fresh auth data before signing
+    const existingAuthData = authData()
+    if (existingAuthData && !isSessionExpiringSoon()) {
+      return lit.signMessageWithPKP(currentPkpInfo, existingAuthData, message)
+    }
+
+    // Refresh only when needed to avoid passkey prompts on load
     const freshAuthData = await lit.refreshAuth()
     setAuthData(freshAuthData)
+    saveSession(currentPkpInfo, freshAuthData)
 
-    // Sign with PKP
     return lit.signMessageWithPKP(currentPkpInfo, freshAuthData, message)
   }
 
@@ -350,6 +356,33 @@ export function AuthProvider(props: ParentProps) {
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext)
   if (!context) {
+    // During HMR or lazy loading transitions, context may be temporarily unavailable.
+    // Return a placeholder that won't break reactivity but will re-evaluate when
+    // the component is properly mounted within the provider tree.
+    if (import.meta.hot) {
+      console.warn('[Auth] Context unavailable during HMR - returning placeholder')
+      // Return a minimal placeholder that signals "not ready"
+      return {
+        pkpInfo: () => null,
+        pkpAddress: () => null,
+        authData: () => null,
+        isAuthenticated: () => false,
+        isAuthenticating: () => false,
+        authError: () => null,
+        authStatus: () => '',
+        eoaAddress: () => null,
+        isWalletConnected: () => false,
+        register: async () => { throw new Error('Auth context not ready') },
+        signIn: async () => { throw new Error('Auth context not ready') },
+        connectWithEoa: async () => { throw new Error('Auth context not ready') },
+        expectWalletConnection: () => {},
+        logout: () => {},
+        signMessage: async () => { throw new Error('Auth context not ready') },
+        openAuthDialog: () => {},
+        closeAuthDialog: () => {},
+        isAuthDialogOpen: () => false,
+      }
+    }
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context

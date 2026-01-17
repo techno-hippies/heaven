@@ -16,7 +16,7 @@ const KINK_LEVEL = 10;
 
 const UNKNOWN_CATEGORICAL = 15;
 const UNKNOWN_NUMERIC = 255;
-const WILDCARD_MASK = 0xFFFF;
+const WILDCARD_MASK = 0x7FFF;
 const UNKNOWN_BIT = 1 << 15; // 0x8000
 
 type Signers = {

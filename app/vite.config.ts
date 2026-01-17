@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         globals: { Buffer: true },
       }),
     ],
+    assetsInclude: ['**/*.wasm'],
+    optimizeDeps: {
+      exclude: ['@xmtp/browser-sdk', '@xmtp/wasm-bindings'],
+    },
     resolve: {
       alias: {
         '@': resolve(__dirname, './src'),

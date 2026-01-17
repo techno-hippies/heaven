@@ -4,7 +4,7 @@
  * Encodes user preferences with true secret dealbreaker privacy:
  * - No plaintext policies on chain
  * - UNKNOWN sentinel: 15 for categorical, 255 for numeric
- * - WILDCARD mask (0xFFFF) = NONE policy (don't filter)
+ * - WILDCARD mask (0x7FFF) = NONE policy (don't filter known values)
  * - revealOnMatch: true = CRITERIA, false = DEALBREAKER
  */
 
@@ -35,8 +35,8 @@ export const UNKNOWN_NUMERIC = 255;
 // Bit 15 in prefMask = accept UNKNOWN values (used for numeric LENIENT)
 export const UNKNOWN_BIT = 1 << 15;  // 0x8000
 
-// Wildcard = accept all (NONE policy)
-export const WILDCARD_MASK = 0xFFFF;
+// Wildcard = accept all known values (NONE policy)
+export const WILDCARD_MASK = 0x7FFF;
 
 // Max valid categorical value (1-14 valid, 0 = UNSPECIFIED → UNKNOWN, 15 = UNKNOWN)
 // NOTE: Enum value 0 (UNSPECIFIED) is mapped to 15 (UNKNOWN) by validateCategorical()
@@ -89,14 +89,10 @@ export enum KidsTimeline {
 
 export enum RelationshipStructure {
   UNSPECIFIED = 0,
-  STRICTLY_MONO = 1,
-  MONOGAMISH = 2,
-  OPEN_SEXUAL = 3,
-  OPEN_ROMANTIC = 4,
-  RELATIONSHIP_ANARCHY = 5,
-  SWINGING_TOGETHER = 6,
-  SWINGING_SEPARATE = 7,
-  DONT_KNOW = 8,
+  MONOGAMOUS = 1,
+  OPEN = 2,
+  POLY = 3,
+  RELATIONSHIP_ANARCHY = 4,
   UNKNOWN = UNKNOWN_CATEGORICAL,
 }
 
@@ -111,10 +107,10 @@ export enum Smoking {
 export enum RelationshipStatus {
   UNSPECIFIED = 0,
   SINGLE = 1,
-  PARTNERED = 2,
+  RELATIONSHIP = 2,
   MARRIED = 3,
-  OPEN_RELATIONSHIP = 4,
-  SEPARATED_DIVORCING = 5,
+  SEPARATED = 4,
+  DIVORCED = 5,
   UNKNOWN = UNKNOWN_CATEGORICAL,
 }
 
@@ -181,7 +177,7 @@ export interface ProfileConfig {
 
 export interface EncodedProfile {
   values: number[];       // 12 values (UNKNOWN sentinel if not set)
-  prefMasks: number[];    // 12 masks (WILDCARD if NONE policy)
+  prefMasks: number[];    // 12 masks (WILDCARD for NONE policy on categoricals)
   prefMins: number[];     // 12 mins (0 if no filter)
   prefMaxs: number[];     // 12 maxs (255 if no filter)
   revealFlags: boolean[]; // 12 flags (true = CRITERIA, false = DEALBREAKER)
@@ -263,7 +259,7 @@ export function createMask(values: number[]): number {
  * Create preference mask based on policy and unknown handling
  *
  * @param acceptedValues Values to accept (categorical)
- * @param policy NONE = WILDCARD, DEALBREAKER/CRITERIA = specific mask
+ * @param policy NONE = WILDCARD (known values), DEALBREAKER/CRITERIA = specific mask
  * @param unknownHandling STRICT = don't include bit 15, LENIENT = include bit 15
  */
 export function createPrefMask(
@@ -271,9 +267,11 @@ export function createPrefMask(
   policy: MatchPolicy,
   unknownHandling: UnknownHandling
 ): number {
-  // NONE policy = accept everything
+  // NONE policy = accept all known values
   if (policy === 'NONE') {
-    return WILDCARD_MASK;
+    return unknownHandling === 'LENIENT'
+      ? (WILDCARD_MASK | UNKNOWN_BIT)
+      : WILDCARD_MASK;
   }
 
   // Create mask from accepted values
@@ -313,6 +311,10 @@ export function encodeAttribute(
   let prefMask = WILDCARD_MASK;
   let prefMin = 0;
   let prefMax = isNumeric ? 254 : 0;  // 254 for numeric WILDCARD (not 255)
+
+  if (config.policy === 'NONE' && config.unknownHandling === 'LENIENT') {
+    prefMask = isNumeric ? UNKNOWN_BIT : (WILDCARD_MASK | UNKNOWN_BIT);
+  }
 
   if (config.policy !== 'NONE') {
     if (isNumeric) {
@@ -388,7 +390,7 @@ export function encodeProfile(config: Partial<ProfileConfig>): EncodedProfile {
  * @param visibility - 'public' | 'match' | 'private' (visibility selector)
  *
  * When filterEnabled is false:
- *   - policy = 'NONE' → prefMask = WILDCARD_MASK (sees everyone)
+ *   - policy = 'NONE' → prefMask = WILDCARD_MASK (sees everyone with known values)
  *   - acceptedValues are stored for potential future use but don't gate
  *
  * When filterEnabled is true:
@@ -512,7 +514,7 @@ export function exampleProfileFromUI(): EncodedProfile {
     // Values (what I am) - from Steps 1-9
     myAge: 29,
     myGender: GenderIdentity.WOMAN,
-    myRelationshipStructure: RelationshipStructure.MONOGAMISH,
+    myRelationshipStructure: RelationshipStructure.MONOGAMOUS,
     myKids: Kids.NO_KIDS_WANT_SOMEDAY,
     myReligion: Religion.SPIRITUAL,
 
@@ -528,7 +530,7 @@ export function exampleProfileFromUI(): EncodedProfile {
       filterEnabled: true,  // ON by default for age
     },
     relationshipStructurePref: {
-      values: [RelationshipStructure.STRICTLY_MONO, RelationshipStructure.MONOGAMISH],
+      values: [RelationshipStructure.MONOGAMOUS],
       filterEnabled: false,  // OFF by default - just a signal
     },
     kidsPref: {
@@ -644,23 +646,19 @@ export const KINK_LABELS: Record<number, string> = {
 
 export const RELATIONSHIP_LABELS: Record<number, string> = {
   [RelationshipStructure.UNSPECIFIED]: 'Not specified',
-  [RelationshipStructure.STRICTLY_MONO]: 'Strictly monogamous',
-  [RelationshipStructure.MONOGAMISH]: 'Mostly monogamous',
-  [RelationshipStructure.OPEN_SEXUAL]: 'Open (sexual)',
-  [RelationshipStructure.OPEN_ROMANTIC]: 'Polyamorous',
+  [RelationshipStructure.MONOGAMOUS]: 'Monogamous',
+  [RelationshipStructure.OPEN]: 'Open',
+  [RelationshipStructure.POLY]: 'Polyamorous',
   [RelationshipStructure.RELATIONSHIP_ANARCHY]: 'Relationship anarchy',
-  [RelationshipStructure.SWINGING_TOGETHER]: 'Couples play (together)',
-  [RelationshipStructure.SWINGING_SEPARATE]: 'Couples play (separate)',
-  [RelationshipStructure.DONT_KNOW]: 'Figuring it out',
 };
 
 export const RELATIONSHIP_STATUS_LABELS: Record<number, string> = {
   [RelationshipStatus.UNSPECIFIED]: 'Not specified',
   [RelationshipStatus.SINGLE]: 'Single',
-  [RelationshipStatus.PARTNERED]: 'Partnered',
+  [RelationshipStatus.RELATIONSHIP]: 'In a relationship',
   [RelationshipStatus.MARRIED]: 'Married',
-  [RelationshipStatus.OPEN_RELATIONSHIP]: 'Open relationship',
-  [RelationshipStatus.SEPARATED_DIVORCING]: 'Separated/Divorcing',
+  [RelationshipStatus.SEPARATED]: 'Separated',
+  [RelationshipStatus.DIVORCED]: 'Divorced',
 };
 
 export const BIOLOGICAL_SEX_LABELS: Record<number, string> = {

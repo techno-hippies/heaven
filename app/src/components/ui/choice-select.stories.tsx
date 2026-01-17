@@ -44,14 +44,14 @@ export const GenderIdentity: Story = {
   },
 }
 
-/** Looking For (Directory.sol) */
+/** Seeking (Directory.sol) */
 export const LookingFor: Story = {
   render: () => {
     const [value, setValue] = createSignal<string[]>([])
     return (
       <div class="max-w-sm">
         <ChoiceSelect
-          label="Looking for"
+          label="Seeking"
           multiple
           options={toOptions(LOOKING_FOR_LABELS)}
           value={value()}

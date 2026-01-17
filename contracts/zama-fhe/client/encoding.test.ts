@@ -31,8 +31,8 @@ describe("Constants", () => {
     expect(UNKNOWN_BIT).toBe(1 << 15);
   });
 
-  test("WILDCARD_MASK should be 0xFFFF", () => {
-    expect(WILDCARD_MASK).toBe(0xFFFF);
+  test("WILDCARD_MASK should be 0x7FFF", () => {
+    expect(WILDCARD_MASK).toBe(0x7FFF);
   });
 });
 
@@ -135,6 +135,10 @@ describe("createPrefMask", () => {
     expect(createPrefMask([1, 2, 3], "NONE", "STRICT")).toBe(WILDCARD_MASK);
   });
 
+  test("NONE policy with LENIENT should include UNKNOWN_BIT", () => {
+    expect(createPrefMask([1, 2, 3], "NONE", "LENIENT")).toBe(WILDCARD_MASK | UNKNOWN_BIT);
+  });
+
   test("DEALBREAKER with STRICT should not include bit 15", () => {
     const mask = createPrefMask([1, 2], "DEALBREAKER", "STRICT");
     expect(mask & UNKNOWN_BIT).toBe(0);
@@ -157,7 +161,7 @@ describe("createPrefMask", () => {
 });
 
 describe("encodeAttribute - numeric", () => {
-  test("NONE policy should have WILDCARD prefMask", () => {
+  test("NONE policy with LENIENT should set UNKNOWN_BIT", () => {
     const result = encodeAttribute(ATTR.EXACT_AGE, {
       value: 30,
       policy: "NONE",
@@ -165,7 +169,7 @@ describe("encodeAttribute - numeric", () => {
     });
 
     expect(result.value).toBe(30);
-    expect(result.prefMask).toBe(WILDCARD_MASK);
+    expect(result.prefMask).toBe(UNKNOWN_BIT);
     expect(result.prefMin).toBe(0);
     expect(result.prefMax).toBe(254);
     expect(result.revealFlag).toBe(false);
@@ -214,7 +218,7 @@ describe("encodeAttribute - numeric", () => {
 });
 
 describe("encodeAttribute - categorical", () => {
-  test("NONE policy should have WILDCARD prefMask", () => {
+  test("NONE policy with LENIENT should include UNKNOWN_BIT", () => {
     const result = encodeAttribute(ATTR.RELIGION, {
       value: Religion.CHRISTIAN,
       policy: "NONE",
@@ -222,7 +226,7 @@ describe("encodeAttribute - categorical", () => {
     });
 
     expect(result.value).toBe(3); // CHRISTIAN
-    expect(result.prefMask).toBe(WILDCARD_MASK);
+    expect(result.prefMask).toBe(WILDCARD_MASK | UNKNOWN_BIT);
     expect(result.revealFlag).toBe(false);
   });
 

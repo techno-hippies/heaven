@@ -5,10 +5,10 @@ import '../src/index.css'
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      default: 'dark',
+      default: 'light',
       values: [
-        { name: 'dark', value: '#1a1625' },
         { name: 'light', value: '#faf8f5' },
+        { name: 'dark', value: '#1a1625' },
       ],
     },
     controls: {

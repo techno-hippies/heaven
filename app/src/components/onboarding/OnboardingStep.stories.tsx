@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from 'storybook-solidjs'
-import { createSignal } from 'solid-js'
+import { createSignal, createEffect } from 'solid-js'
 import { OnboardingStep } from './OnboardingStep'
+import { ChooseName } from './ChooseName'
 import { ChoiceSelect } from '@/components/ui/choice-select'
 import { PhotoUpload } from '@/components/ui/photo-upload'
+import { InputWithSuffix, InputStatus, type InputState } from '@/components/ui/input'
 import { type Visibility } from '@/components/ui/visibility-select'
 import { Icon } from '@/components/icons'
 import {
@@ -14,7 +16,6 @@ import {
   KIDS_LABELS,
   RELIGION_LABELS,
   GROUP_PLAY_MODE_LABELS,
-  KINK_LEVEL_LABELS,
 } from '@/components/profile/ProfileBadge'
 
 const meta: Meta<typeof OnboardingStep> = {
@@ -31,29 +32,31 @@ type Story = StoryObj<typeof OnboardingStep>
 const toOptions = (labels: Record<number, string>) =>
   Object.entries(labels).map(([value, label]) => ({ value, label }))
 
-// Total steps varies based on path, using 9 as baseline
-const TOTAL_STEPS = 9
-
 // =============================================================================
-// 1) RELATIONSHIP CONTEXT (branch early, private)
+// S1: ABOUT YOU (Values) - stored to Zama/FHE
 // =============================================================================
 
-/** Step 1: Relationship Status */
-export const Step1_RelationshipStatus: Story = {
-  name: '1. Relationship Status',
+const ABOUT_YOU_TOTAL_STEPS = 10
+
+/** S1.1: Relationship Status */
+export const S1_1_RelationshipStatus: Story = {
+  name: 'S1.1 Relationship Status',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('match')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="What's your relationship status?"
         step={1}
-        totalSteps={TOTAL_STEPS}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Next!')}
+        onBack={() => alert('Back to landing!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}, Visibility: ${visibility()}`)}
       >
         <ChoiceSelect
           options={toOptions(RELATIONSHIP_STATUS_LABELS)}
@@ -65,13 +68,9 @@ export const Step1_RelationshipStatus: Story = {
   },
 }
 
-// =============================================================================
-// 2) PUBLIC PROFILE (Directory)
-// =============================================================================
-
-/** Step 2: Photo */
-export const Step2_Photo: Story = {
-  name: '2. Photo',
+/** S1.2: Photo */
+export const S1_2_Photo: Story = {
+  name: 'S1.2 Photo',
   render: () => {
     const [photoUrl, setPhotoUrl] = createSignal<string>()
     const [state, setState] = createSignal<'empty' | 'uploading' | 'success'>('empty')
@@ -86,11 +85,14 @@ export const Step2_Photo: Story = {
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="Got a photo?"
+        subtitle="Your main avatar is public and portable on Ethereum."
         step={2}
-        totalSteps={TOTAL_STEPS}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!photoUrl()}
         onBack={() => alert('Back!')}
+        onSkip={() => alert('Skipped photo')}
         onContinue={() => alert('Next!')}
       >
         <PhotoUpload
@@ -105,20 +107,71 @@ export const Step2_Photo: Story = {
   },
 }
 
-/** Step 3: Region */
-export const Step3_Region: Story = {
-  name: '3. Region',
+/** S1.3: Name - uses new ChooseName component with TLD selector */
+export const S1_3_Name: Story = {
+  name: 'S1.3 Name',
+  render: () => {
+    const [name, setName] = createSignal('')
+    const [tld, setTld] = createSignal('neodate')
+    const [status, setStatus] = createSignal<InputState>('idle')
+
+    // Simulated taken names per TLD
+    const takenNames: Record<string, string[]> = {
+      neodate: ['alice', 'bob', 'admin', 'test'],
+      star: ['alice', 'admin'],
+      spiral: ['bob'],
+      tulip: [],
+    }
+
+    // Check availability when name or TLD changes
+    createEffect(() => {
+      const currentName = name()
+      const currentTld = tld()
+
+      if (currentName.length < 3) {
+        setStatus('idle')
+        return
+      }
+
+      setStatus('checking')
+      setTimeout(() => {
+        const taken = takenNames[currentTld] ?? []
+        setStatus(taken.includes(currentName) ? 'invalid' : 'valid')
+      }, 500)
+    })
+
+    return (
+      <ChooseName
+        name={name()}
+        onNameChange={setName}
+        selectedTld={tld()}
+        onTldChange={setTld}
+        status={status()}
+        step={3}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
+        onBack={() => alert('Back!')}
+        onContinue={() => alert(`Registered: ${name()}.${tld()}`)}
+      />
+    )
+  },
+}
+
+/** S1.4: Region */
+export const S1_4_Region: Story = {
+  name: 'S1.4 Region',
   render: () => {
     const [value, setValue] = createSignal<string>()
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="Where are you?"
-        step={3}
-        totalSteps={TOTAL_STEPS}
+        step={4}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
-        onContinue={() => alert('Next!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}`)}
       >
         <ChoiceSelect
           options={toOptions(REGION_BUCKET_LABELS)}
@@ -130,23 +183,25 @@ export const Step3_Region: Story = {
   },
 }
 
-/** Step 4: Gender */
-export const Step4_Gender: Story = {
-  name: '4. Gender',
+/** S1.5: Gender */
+export const S1_5_Gender: Story = {
+  name: 'S1.5 Gender',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('public')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="How do you identify?"
-        step={4}
-        totalSteps={TOTAL_STEPS}
+        step={5}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Next!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}, Visibility: ${visibility()}`)}
       >
         <ChoiceSelect
           options={toOptions(GENDER_IDENTITY_LABELS)}
@@ -158,23 +213,25 @@ export const Step4_Gender: Story = {
   },
 }
 
-/** Step 5: Looking For */
-export const Step5_LookingFor: Story = {
-  name: '5. Looking For',
+/** S1.6: Looking For */
+export const S1_6_LookingFor: Story = {
+  name: 'S1.6 Looking For',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('public')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="What are you looking for?"
-        step={5}
-        totalSteps={TOTAL_STEPS}
+        step={6}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Next!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}, Visibility: ${visibility()}`)}
       >
         <ChoiceSelect
           options={toOptions(LOOKING_FOR_LABELS)}
@@ -186,27 +243,25 @@ export const Step5_LookingFor: Story = {
   },
 }
 
-// =============================================================================
-// 3) PRIVATE PROFILE (Dating values)
-// =============================================================================
-
-/** Step 6: Relationship Structure */
-export const Step6_RelationshipStructure: Story = {
-  name: '6. Relationship Structure',
+/** S1.7: Relationship Structure */
+export const S1_7_RelationshipStructure: Story = {
+  name: 'S1.7 Relationship Structure',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('match')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="What's your relationship style?"
-        step={6}
-        totalSteps={TOTAL_STEPS}
+        step={7}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Next!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}, Visibility: ${visibility()}`)}
       >
         <ChoiceSelect
           options={toOptions(RELATIONSHIP_STRUCTURE_LABELS)}
@@ -218,23 +273,25 @@ export const Step6_RelationshipStructure: Story = {
   },
 }
 
-/** Step 7: Kids */
-export const Step7_Kids: Story = {
-  name: '7. Kids',
+/** S1.8: Kids */
+export const S1_8_Kids: Story = {
+  name: 'S1.8 Kids',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('match')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="Do you have kids?"
-        step={7}
-        totalSteps={TOTAL_STEPS}
+        step={8}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Next!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}, Visibility: ${visibility()}`)}
       >
         <ChoiceSelect
           options={toOptions(KIDS_LABELS)}
@@ -246,23 +303,25 @@ export const Step7_Kids: Story = {
   },
 }
 
-/** Step 8: Religion */
-export const Step8_Religion: Story = {
-  name: '8. Religion',
+/** S1.9: Religion */
+export const S1_9_Religion: Story = {
+  name: 'S1.9 Religion',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('match')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="What do you believe?"
-        step={8}
-        totalSteps={TOTAL_STEPS}
+        step={9}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Next!')}
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert(`Next! Value: ${value()}, Visibility: ${visibility()}`)}
       >
         <ChoiceSelect
           options={toOptions(RELIGION_LABELS)}
@@ -274,24 +333,25 @@ export const Step8_Religion: Story = {
   },
 }
 
-/** Step 9: Group Play */
-export const Step9_GroupPlay: Story = {
-  name: '9. Group Play',
+/** S1.10: Group Play */
+export const S1_10_GroupPlay: Story = {
+  name: 'S1.10 Group Play',
   render: () => {
     const [value, setValue] = createSignal<string>()
     const [visibility, setVisibility] = createSignal<Visibility>('private')
 
     return (
       <OnboardingStep
+        sectionLabel="Profile"
         title="Into group play?"
-        step={9}
-        totalSteps={TOTAL_STEPS}
+        step={10}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
         canContinue={!!value()}
         onBack={() => alert('Back!')}
         visibility={visibility()}
         onVisibilityChange={setVisibility}
-        onContinue={() => alert('Start browsing!')}
-        continueText="Start browsing"
+        onSkip={() => alert('Skipped - storing UNKNOWN')}
+        onContinue={() => alert('Moving to Dealbreakers phase!')}
       >
         <ChoiceSelect
           options={toOptions(GROUP_PLAY_MODE_LABELS)}
@@ -304,221 +364,201 @@ export const Step9_GroupPlay: Story = {
 }
 
 // =============================================================================
-// 4) ACCOUNT CREATION (after profile setup)
+// S1.11: PREVIEW - Review before committing
 // =============================================================================
 
-/** Account Creation: Method selection */
-export const Account_MethodSelection: Story = {
-  name: 'Account: Method Selection',
+/** S1.11: Profile Preview - grouped by visibility */
+export const S1_11_Preview: Story = {
+  name: 'S1.11 Preview',
   render: () => {
-    return (
-      <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
-        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-2xl mx-auto space-y-6">
-            {/* Icon */}
-            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <Icon name="lock-simple" class="text-4xl text-primary" />
-            </div>
+    // Mock data from previous steps
+    const profile = {
+      photoUrl: 'https://api.dicebear.com/9.x/notionists/svg?seed=sakura&backgroundColor=ffdfbf',
+      name: 'Sakura',
+      domain: 'sakura.neodate',
+      fields: [
+        { category: 'Status', value: 'Single', visibility: 'match' as const },
+        { category: 'Region', value: 'East & Southeast Asia', visibility: 'public' as const },
+        { category: 'Gender', value: 'Woman', visibility: 'public' as const },
+        { category: 'Seeking', value: 'Relationship', visibility: 'public' as const },
+        { category: 'Structure', value: 'Monogamous', visibility: 'match' as const },
+        { category: 'Kids', value: 'Want kids', visibility: 'match' as const },
+        { category: 'Religion', value: 'Buddhist/Hindu', visibility: 'match' as const },
+        { category: 'Group play', value: 'Not interested', visibility: 'private' as const },
+      ],
+    }
 
-            <div class="space-y-3">
-              <h1 class="text-3xl font-bold text-foreground">Create your account</h1>
-              <p class="text-lg text-muted-foreground">
-                Your profile is ready. Now secure it with a passkey or wallet.
-              </p>
-            </div>
-
-            {/* Auth options */}
-            <div class="flex flex-col gap-3 pt-4 w-full max-w-sm mx-auto">
-              <button
-                class="w-full h-14 px-6 text-lg font-medium rounded-full bg-primary text-primary-foreground flex items-center justify-center gap-3"
-                onClick={() => alert('Passkey selected')}
-              >
-                <Icon name="fingerprint" class="text-2xl" />
-                <span>Continue with Passkey</span>
-              </button>
-
-              <div class="flex items-center gap-4 py-2">
-                <div class="flex-1 h-px bg-border" />
-                <span class="text-muted-foreground text-sm">or</span>
-                <div class="flex-1 h-px bg-border" />
-              </div>
-
-              <button
-                class="w-full h-14 px-6 text-lg font-medium rounded-full border border-border bg-transparent text-foreground flex items-center justify-center gap-3 hover:bg-secondary/50"
-                onClick={() => alert('Wallet selected')}
-              >
-                <Icon name="wallet" class="text-2xl" />
-                <span>Connect Wallet</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div class="w-full px-6 pb-6">
-          <p class="text-sm text-muted-foreground text-center">
-            Secured by Lit Protocol. Your identity is portable across apps.
-          </p>
-        </div>
-      </div>
-    )
-  },
-}
-
-/** Account Creation: Passkey choice (Create/Sign In) */
-export const Account_PasskeyChoice: Story = {
-  name: 'Account: Passkey Choice',
-  render: () => {
-    return (
-      <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
-        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-2xl mx-auto space-y-6">
-            {/* Icon */}
-            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <Icon name="fingerprint" class="text-4xl text-primary" />
-            </div>
-
-            <div class="space-y-3">
-              <h1 class="text-3xl font-bold text-foreground">Sign in with Passkey</h1>
-              <p class="text-lg text-muted-foreground">
-                Use your device's passkey (Face ID, Touch ID, or Windows Hello) for secure authentication.
-              </p>
-            </div>
-
-            {/* Auth options */}
-            <div class="flex flex-col gap-3 pt-4 w-full max-w-sm mx-auto">
-              <button
-                class="w-full h-14 px-6 text-lg font-medium rounded-full bg-primary text-primary-foreground"
-                onClick={() => alert('Create Account')}
-              >
-                Create Account
-              </button>
-
-              <button
-                class="w-full h-14 px-6 text-lg font-medium rounded-full border border-border bg-transparent text-foreground hover:bg-secondary/50"
-                onClick={() => alert('Sign In')}
-              >
-                Sign In
-              </button>
-            </div>
-
-            {/* Back button */}
-            <button
-              class="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 mx-auto"
-              onClick={() => alert('Back')}
-            >
-              <Icon name="arrow-left" class="text-base" />
-              <span>Back</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  },
-}
-
-/** Account Creation: Passkey authenticating */
-export const Account_PasskeyAuthenticating: Story = {
-  name: 'Account: Passkey Authenticating',
-  render: () => {
-    return (
-      <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
-        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-2xl mx-auto space-y-6">
-            {/* Spinner */}
-            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-
-            <div class="space-y-3">
-              <h1 class="text-3xl font-bold text-foreground">Complete the passkey prompt</h1>
-              <p class="text-lg text-muted-foreground">
-                A passkey prompt should appear on your device. Follow the instructions to continue.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  },
-}
-
-/** Account Creation: Success */
-export const Account_Success: Story = {
-  name: 'Account: Success',
-  render: () => {
-    return (
-      <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
-        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-2xl mx-auto space-y-6">
-            {/* Success icon */}
-            <div class="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Icon name="check-circle" weight="fill" class="text-4xl text-emerald-500" />
-            </div>
-
-            <div class="space-y-3">
-              <h1 class="text-3xl font-bold text-foreground">You're all set!</h1>
-              <p class="text-lg text-muted-foreground">
-                Your account is created and your profile is live. Start browsing to find your match.
-              </p>
-            </div>
-
-            {/* Account info */}
-            <div class="bg-card rounded-2xl p-4 border border-border max-w-sm mx-auto">
-              <p class="text-sm text-muted-foreground mb-1">Your address</p>
-              <p class="font-mono text-foreground">0x1234...5678</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div class="w-full px-6 pb-6">
-          <div class="max-w-sm mx-auto">
-            <button
-              class="w-full h-14 px-10 text-lg font-medium rounded-full bg-primary text-primary-foreground"
-              onClick={() => alert('Start browsing!')}
-            >
-              Start browsing
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  },
-}
-
-// =============================================================================
-// 5) PREFERENCES (Dealbreakers - separate flow after browsing)
-// =============================================================================
-
-// =============================================================================
-// 6) PREFERENCES (Dealbreakers - separate flow after browsing)
-// =============================================================================
-
-const PREF_TOTAL_STEPS = 6
-
-/** Preferences: Their Gender - filter ON by default (dealbreaker), multi-select */
-export const Pref1_TheirGender: Story = {
-  name: 'Pref 1: Their Gender',
-  render: () => {
-    const [values, setValues] = createSignal<string[]>([])
-    const [filterEnabled, setFilterEnabled] = createSignal(true) // ON by default
+    const publicFields = () => profile.fields.filter(f => f.visibility === 'public')
+    const matchFields = () => profile.fields.filter(f => f.visibility === 'match')
+    const privateFields = () => profile.fields.filter(f => f.visibility === 'private')
 
     return (
       <OnboardingStep
-        title="Who are you interested in?"
-        subtitle="Select all that apply"
+        sectionLabel="Preview"
+        title="Here's your profile"
+        subtitle="Review before creating your account."
+        step={ABOUT_YOU_TOTAL_STEPS}
+        totalSteps={ABOUT_YOU_TOTAL_STEPS}
+        canContinue={true}
+        onBack={() => alert('Back to Group Play!')}
+        onContinue={() => alert('Open AuthModal!')}
+        continueText="Create profile"
+      >
+        <div class="space-y-6">
+          {/* Photo + Name */}
+          <div class="flex items-center gap-4">
+            <div class="w-20 h-20 rounded-2xl overflow-hidden bg-secondary flex-shrink-0">
+              <img
+                src={profile.photoUrl}
+                alt={profile.name}
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-foreground">{profile.name}</h2>
+              <p class="text-base text-muted-foreground">{profile.domain}</p>
+            </div>
+          </div>
+
+          {/* Public section */}
+          {publicFields().length > 0 && (
+            <div>
+              <p class="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">
+                Public
+              </p>
+              <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+                {publicFields().map(field => (
+                  <div class="flex flex-col">
+                    <span class="text-sm text-muted-foreground">{field.category}</span>
+                    <span class="text-base font-medium text-foreground">{field.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shared with matches section */}
+          {matchFields().length > 0 && (
+            <div>
+              <p class="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">
+                Shared with matches
+              </p>
+              <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+                {matchFields().map(field => (
+                  <div class="flex flex-col">
+                    <span class="text-sm text-muted-foreground">{field.category}</span>
+                    <span class="text-base font-medium text-foreground">{field.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Private section */}
+          {privateFields().length > 0 && (
+            <div>
+              <p class="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">
+                Private
+              </p>
+              <div class="grid grid-cols-2 gap-x-6 gap-y-3">
+                {privateFields().map(field => (
+                  <div class="flex flex-col">
+                    <span class="text-sm text-muted-foreground">{field.category}</span>
+                    <span class="text-base font-medium text-foreground">{field.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </OnboardingStep>
+    )
+  },
+}
+
+// =============================================================================
+// S2: DEALBREAKERS (Hard Gates) - stored to Zama/FHE
+// Only: Gender, Age, Location
+// =============================================================================
+
+const DEALBREAKER_TOTAL_STEPS = 3
+
+/** S2.1: Gender Dealbreaker - Gate */
+export const S2_1_GenderDealbreaker: Story = {
+  name: 'S2.1 Gender Dealbreaker - Gate',
+  render: () => {
+    const [choice, setChoice] = createSignal<'open' | 'pick'>()
+    const [values, setValues] = createSignal<string[]>([])
+
+    const gateOptions = [
+      { value: 'open' as const, label: 'Yes' },
+      { value: 'pick' as const, label: 'No' },
+    ]
+
+    // Gate screen: "Are you open to all genders?"
+    if (!choice() || choice() === 'open') {
+      return (
+        <OnboardingStep
+          sectionLabel="Dealbreakers"
+          title="Are you open to all genders?"
+          subtitle="Set only what's non-negotiable."
+          step={1}
+          totalSteps={DEALBREAKER_TOTAL_STEPS}
+          canContinue={!!choice()}
+          onBack={() => alert('Back to Profile section!')}
+          onContinue={() => {
+            if (choice() === 'open') {
+              alert('No gender dealbreaker - showing all genders')
+            }
+          }}
+        >
+          <div class="flex flex-col gap-2">
+            {gateOptions.map((option) => {
+              const isSelected = () => choice() === option.value
+              return (
+                <button
+                  type="button"
+                  onClick={() => setChoice(option.value)}
+                  class={`flex items-center gap-3 p-4 rounded-2xl text-left cursor-pointer border transition-colors ${
+                    isSelected()
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border bg-card hover:border-primary/30'
+                  }`}
+                >
+                  {/* Radio dot */}
+                  <div
+                    class={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      isSelected()
+                        ? 'border-primary'
+                        : 'border-muted-foreground/30'
+                    }`}
+                  >
+                    {isSelected() && (
+                      <div class="w-2.5 h-2.5 rounded-full bg-primary" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <span class="font-medium text-foreground">{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </OnboardingStep>
+      )
+    }
+
+    // Picker screen: "Who do you want to see?"
+    return (
+      <OnboardingStep
+        sectionLabel="Dealbreakers"
+        title="Who do you want to see?"
+        subtitle="Set only what's non-negotiable."
         step={1}
-        totalSteps={PREF_TOTAL_STEPS}
+        totalSteps={DEALBREAKER_TOTAL_STEPS}
         canContinue={values().length > 0}
-        filterEnabled={filterEnabled()}
-        onFilterChange={setFilterEnabled}
-        onBack={() => alert('Back!')}
-        onContinue={() => alert(`Next! Selected: ${values().join(', ')}, Filter: ${filterEnabled() ? 'ON' : 'OFF'}`)}
+        onBack={() => setChoice(undefined)}
+        onContinue={() => alert(`Dealbreaker: ${values().join(', ')}`)}
       >
         <ChoiceSelect
           multiple
@@ -531,13 +571,12 @@ export const Pref1_TheirGender: Story = {
   },
 }
 
-/** Preferences: Age Range - filter ON by default (dealbreaker) */
-export const Pref2_AgeRange: Story = {
-  name: 'Pref 2: Age Range',
+/** S2.2: Age Dealbreaker */
+export const S2_2_AgeDealbreaker: Story = {
+  name: 'S2.2 Age Dealbreaker',
   render: () => {
     const [minAge, setMinAge] = createSignal<string>()
     const [maxAge, setMaxAge] = createSignal<string>()
-    const [filterEnabled, setFilterEnabled] = createSignal(true) // ON by default
 
     const ageOptions = [
       { value: '18', label: '18' },
@@ -550,16 +589,24 @@ export const Pref2_AgeRange: Story = {
       { value: '50', label: '50+' },
     ]
 
+    const handleContinue = () => {
+      if (minAge() && maxAge()) {
+        alert(`Age dealbreaker: ${minAge()}-${maxAge()}`)
+      } else {
+        alert('No age dealbreaker - showing all ages')
+      }
+    }
+
     return (
       <OnboardingStep
-        title="What ages?"
+        sectionLabel="Dealbreakers"
+        title="Age range"
+        subtitle="Set only what's non-negotiable."
         step={2}
-        totalSteps={PREF_TOTAL_STEPS}
-        canContinue={!!minAge() && !!maxAge()}
-        filterEnabled={filterEnabled()}
-        onFilterChange={setFilterEnabled}
+        totalSteps={DEALBREAKER_TOTAL_STEPS}
+        canContinue={true}
         onBack={() => alert('Back!')}
-        onContinue={() => alert(`Next! Filter: ${filterEnabled() ? 'ON' : 'OFF'}`)}
+        onContinue={handleContinue}
       >
         <div class="space-y-4">
           <div>
@@ -586,28 +633,32 @@ export const Pref2_AgeRange: Story = {
   },
 }
 
-/** Preferences: Their Location - filter ON by default, multi-select regions */
-export const Pref3_Location: Story = {
-  name: 'Pref 3: Location',
+// Seeking regions without "Prefer not to say" (key 9)
+const SEEKING_REGION_OPTIONS = Object.entries(REGION_BUCKET_LABELS)
+  .filter(([key]) => key !== '9')
+  .map(([value, label]) => ({ value, label }))
+
+/** S2.3: Location Dealbreaker */
+export const S2_3_LocationDealbreaker: Story = {
+  name: 'S2.3 Location Dealbreaker',
   render: () => {
     const [values, setValues] = createSignal<string[]>([])
-    const [filterEnabled, setFilterEnabled] = createSignal(true) // ON by default
 
     return (
       <OnboardingStep
-        title="Where are they?"
-        subtitle="Select all that apply"
+        sectionLabel="Dealbreakers"
+        title="Where should they be?"
+        subtitle="Set only what's non-negotiable."
         step={3}
-        totalSteps={PREF_TOTAL_STEPS}
+        totalSteps={DEALBREAKER_TOTAL_STEPS}
         canContinue={values().length > 0}
-        filterEnabled={filterEnabled()}
-        onFilterChange={setFilterEnabled}
         onBack={() => alert('Back!')}
-        onContinue={() => alert(`Next! Selected: ${values().join(', ')}, Filter: ${filterEnabled() ? 'ON' : 'OFF'}`)}
+        onContinue={() => alert(`Region dealbreaker: ${values().join(', ')}`)}
+        continueText="Start browsing"
       >
         <ChoiceSelect
           multiple
-          options={toOptions(REGION_BUCKET_LABELS)}
+          options={SEEKING_REGION_OPTIONS}
           value={values()}
           onChange={(v) => setValues(v as string[])}
         />
@@ -616,89 +667,123 @@ export const Pref3_Location: Story = {
   },
 }
 
-/** Preferences: Their Relationship Structure - filter OFF by default (signal), multi-select */
-export const Pref4_RelationshipStructure: Story = {
-  name: 'Pref 4: Relationship Structure',
-  render: () => {
-    const [values, setValues] = createSignal<string[]>([])
-    const [filterEnabled, setFilterEnabled] = createSignal(false) // OFF by default
+// =============================================================================
+// S3: CREATE ACCOUNT
+// =============================================================================
 
-    return (
-      <OnboardingStep
-        title="What are you open to?"
-        subtitle="Select all that apply"
-        step={4}
-        totalSteps={PREF_TOTAL_STEPS}
-        canContinue={values().length > 0}
-        filterEnabled={filterEnabled()}
-        onFilterChange={setFilterEnabled}
-        onBack={() => alert('Back!')}
-        onContinue={() => alert(`Next! Selected: ${values().join(', ')}, Filter: ${filterEnabled() ? 'ON' : 'OFF'}`)}
-      >
-        <ChoiceSelect
-          multiple
-          options={toOptions(RELATIONSHIP_STRUCTURE_LABELS)}
-          value={values()}
-          onChange={(v) => setValues(v as string[])}
-        />
-      </OnboardingStep>
-    )
-  },
-}
-
-/** Preferences: Their Kids Status - filter OFF by default (signal), multi-select */
-export const Pref5_Kids: Story = {
-  name: 'Pref 5: Kids',
-  render: () => {
-    const [values, setValues] = createSignal<string[]>([])
-    const [filterEnabled, setFilterEnabled] = createSignal(false) // OFF by default
-
-    return (
-      <OnboardingStep
-        title="What about kids?"
-        subtitle="Select all that apply"
-        step={5}
-        totalSteps={PREF_TOTAL_STEPS}
-        canContinue={values().length > 0}
-        filterEnabled={filterEnabled()}
-        onFilterChange={setFilterEnabled}
-        onBack={() => alert('Back!')}
-        onContinue={() => alert(`Next! Selected: ${values().join(', ')}, Filter: ${filterEnabled() ? 'ON' : 'OFF'}`)}
-      >
-        <ChoiceSelect
-          multiple
-          options={toOptions(KIDS_LABELS)}
-          value={values()}
-          onChange={(v) => setValues(v as string[])}
-        />
-      </OnboardingStep>
-    )
-  },
-}
-
-/** Preferences: Complete */
-export const Pref6_Complete: Story = {
-  name: 'Pref 6: Complete',
+/** S3.1: Account Method Selection */
+export const S3_1_AccountMethod: Story = {
+  name: 'S3.1 Account Method',
   render: () => {
     return (
       <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
         <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-md mx-auto space-y-6">
-            <div class="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
-              <Icon name="check-circle" weight="fill" class="text-4xl text-emerald-500" />
+          <div class="max-w-2xl mx-auto space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <Icon name="lock-simple" class="text-4xl text-primary" />
             </div>
 
             <div class="space-y-3">
-              <h1 class="text-3xl font-bold text-foreground">Preferences saved</h1>
+              <h1 class="text-3xl font-bold text-foreground">Create your account</h1>
               <p class="text-lg text-muted-foreground">
-                We'll show you profiles that match what you're looking for. You can update these anytime.
+                Your profile is ready. Now secure it with a passkey or wallet.
               </p>
+            </div>
+
+            <div class="flex flex-col gap-3 pt-4 w-full max-w-sm mx-auto">
+              <button
+                class="w-full h-14 px-6 text-lg font-medium rounded-full bg-primary text-primary-foreground flex items-center justify-center gap-3"
+                onClick={() => alert('Passkey selected')}
+              >
+                <Icon name="fingerprint" class="text-2xl" />
+                <span>Continue with Passkey</span>
+              </button>
+
+              <div class="flex items-center gap-4 py-2">
+                <div class="flex-1 h-px bg-border" />
+                <span class="text-muted-foreground text-sm">or</span>
+                <div class="flex-1 h-px bg-border" />
+              </div>
+
+              <button
+                class="w-full h-14 px-6 text-lg font-medium rounded-full border border-border bg-transparent text-foreground flex items-center justify-center gap-3 hover:bg-secondary/50"
+                onClick={() => alert('Wallet selected')}
+              >
+                <Icon name="wallet" class="text-2xl" />
+                <span>Connect Wallet</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
+        <div class="w-full px-6 pb-6">
+          <p class="text-sm text-muted-foreground text-center">
+            Secured by Lit Protocol. Your identity is portable across apps.
+          </p>
+        </div>
+      </div>
+    )
+  },
+}
+
+/** S3.2: Committing (loading state) */
+export const S3_3_Committing: Story = {
+  name: 'S3.3 Committing',
+  render: () => {
+    return (
+      <div class="flex flex-col items-center h-screen bg-background">
+        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div class="max-w-md mx-auto space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+
+            <div class="space-y-3">
+              <h1 class="text-3xl font-bold text-foreground">Setting up your profile</h1>
+              <p class="text-lg text-muted-foreground">
+                Encrypting and saving to blockchain...
+              </p>
+            </div>
+
+            <div class="space-y-2 text-sm text-muted-foreground">
+              <p>✓ Encrypting values with FHE</p>
+              <p>✓ Generating proof</p>
+              <p class="text-foreground">○ Writing to Directory...</p>
+              <p class="text-muted-foreground/50">○ Writing to Dating contract...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+}
+
+/** S3.4: Success */
+export const S3_4_Success: Story = {
+  name: 'S3.4 Success',
+  render: () => {
+    return (
+      <div class="flex flex-col items-center h-screen bg-background">
+        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div class="max-w-md mx-auto space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Icon name="check-circle" weight="fill" class="text-4xl text-emerald-500" />
+            </div>
+
+            <div class="space-y-3">
+              <h1 class="text-3xl font-bold text-foreground">You're all set!</h1>
+              <p class="text-lg text-muted-foreground">
+                Your profile is live. Start browsing to find your match.
+              </p>
+            </div>
+
+            <div class="bg-card rounded-2xl p-4 border border-border">
+              <p class="text-sm text-muted-foreground mb-1">Your address</p>
+              <p class="font-mono text-foreground">0x1234...5678</p>
+            </div>
+          </div>
+        </div>
+
         <div class="w-full px-6 pb-6">
           <div class="max-w-md mx-auto">
             <button
@@ -715,7 +800,276 @@ export const Pref6_Complete: Story = {
 }
 
 // =============================================================================
-// 7) VERIFICATION (Self.xyz - after browsing)
+// P: POST-ONBOARDING PREFERENCES (Soft - Filecoin/IPFS)
+// =============================================================================
+
+/** P0: Preferences Entry */
+export const P0_PreferencesEntry: Story = {
+  name: 'P0 Preferences Entry',
+  render: () => {
+    return (
+      <div class="flex flex-col items-center h-screen bg-background">
+        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div class="max-w-md mx-auto space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <Icon name="funnel" class="text-4xl text-primary" />
+            </div>
+
+            <div class="space-y-3">
+              <h1 class="text-3xl font-bold text-foreground">Improve recommendations</h1>
+              <p class="text-lg text-muted-foreground">
+                Add preferences to help us show you better matches. These don't hide anyone.
+              </p>
+            </div>
+
+            <div class="text-left bg-card rounded-2xl p-4 border border-border">
+              <p class="text-sm text-muted-foreground mb-3">Preferences are different from dealbreakers:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <Icon name="check" weight="bold" class="text-green-400 text-sm" />
+                  <span class="text-sm text-foreground">Used to rank and sort profiles</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <Icon name="check" weight="bold" class="text-green-400 text-sm" />
+                  <span class="text-sm text-foreground">Optionally shared with matches</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <Icon name="x" weight="bold" class="text-red-400 text-sm" />
+                  <span class="text-sm text-foreground">Never hide profiles from you</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full px-6 pb-6">
+          <div class="max-w-md mx-auto space-y-3">
+            <button
+              class="w-full h-14 px-10 text-lg font-medium rounded-full bg-primary text-primary-foreground"
+              onClick={() => alert('Start preferences survey')}
+            >
+              Add preferences
+            </button>
+            <button
+              class="w-full text-center text-muted-foreground hover:text-foreground py-2"
+              onClick={() => alert('Skip for now')}
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  },
+}
+
+/** P1: Preference Builder Example */
+export const P1_PreferenceBuilder: Story = {
+  name: 'P1 Preference Builder',
+  render: () => {
+    const [values, setValues] = createSignal<string[]>([])
+    const [privacy, setPrivacy] = createSignal<'private' | 'match' | 'public'>('private')
+
+    return (
+      <OnboardingStep
+        variant="modal"
+        headerTitle="Preferences"
+        sectionLabel="Preferences"
+        title="Relationship style preferences?"
+        subtitle="Select what you're open to"
+        canContinue={values().length > 0}
+        onBack={() => alert('Close!')}
+        onSkip={() => alert('Skip this preference')}
+        onContinue={() => alert(`Saved! Values: ${values().join(', ')}, Privacy: ${privacy()}`)}
+        continueText="Save"
+      >
+        <ChoiceSelect
+          multiple
+          options={toOptions(RELATIONSHIP_STRUCTURE_LABELS)}
+          value={values()}
+          onChange={(v) => setValues(v as string[])}
+        />
+
+        <div class="space-y-2">
+          <p class="text-sm text-muted-foreground">Who can see this preference?</p>
+          <div class="flex gap-2">
+            {[
+              { value: 'private', label: 'Only me', icon: 'eye-slash' },
+              { value: 'match', label: 'Matches', icon: 'users' },
+              { value: 'public', label: 'Anyone', icon: 'globe' },
+            ].map((opt) => (
+              <button
+                class={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-colors ${
+                  privacy() === opt.value
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/30'
+                }`}
+                onClick={() => setPrivacy(opt.value as typeof privacy extends () => infer T ? T : never)}
+              >
+                <Icon name={opt.icon as any} class="w-4 h-4" />
+                <span class="text-sm">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </OnboardingStep>
+    )
+  },
+}
+
+/** P2: Storage Choice */
+export const P2_StorageChoice: Story = {
+  name: 'P2 Storage Choice',
+  render: () => {
+    const [storage, setStorage] = createSignal<'ipfs' | 'filecoin'>('ipfs')
+
+    return (
+      <div class="flex flex-col items-center h-screen bg-background">
+        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div class="max-w-md mx-auto space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <Icon name="globe" class="text-4xl text-primary" />
+            </div>
+
+            <div class="space-y-3">
+              <h1 class="text-3xl font-bold text-foreground">Where to save?</h1>
+              <p class="text-lg text-muted-foreground">
+                Your preferences are encrypted. Choose where to store them.
+              </p>
+            </div>
+
+            <div class="space-y-3 text-left">
+              <button
+                class={`w-full p-4 rounded-2xl border text-left transition-colors ${
+                  storage() === 'ipfs'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/30'
+                }`}
+                onClick={() => setStorage('ipfs')}
+              >
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Icon name="globe" class="text-blue-500" />
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium text-foreground">IPFS</p>
+                    <p class="text-sm text-muted-foreground">Free — we pin it for you</p>
+                  </div>
+                  <div class={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    storage() === 'ipfs' ? 'border-primary' : 'border-muted-foreground/30'
+                  }`}>
+                    {storage() === 'ipfs' && <div class="w-2.5 h-2.5 rounded-full bg-primary" />}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                class={`w-full p-4 rounded-2xl border text-left transition-colors ${
+                  storage() === 'filecoin'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/30'
+                }`}
+                onClick={() => setStorage('filecoin')}
+              >
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <Icon name="lock-simple" class="text-green-500" />
+                  </div>
+                  <div class="flex-1">
+                    <p class="font-medium text-foreground">Filecoin</p>
+                    <p class="text-sm text-muted-foreground">You pay USDFC + FIL gas — you own it</p>
+                  </div>
+                  <div class={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    storage() === 'filecoin' ? 'border-primary' : 'border-muted-foreground/30'
+                  }`}>
+                    {storage() === 'filecoin' && <div class="w-2.5 h-2.5 rounded-full bg-primary" />}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full px-6 pb-6">
+          <div class="max-w-md mx-auto">
+            <button
+              class="w-full h-14 px-10 text-lg font-medium rounded-full bg-primary text-primary-foreground"
+              onClick={() => alert(`Saving to ${storage()}...`)}
+            >
+              Save preferences
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  },
+}
+
+/** P3: Consent for Recommendations */
+export const P3_RecommendationConsent: Story = {
+  name: 'P3 Recommendation Consent',
+  render: () => {
+    return (
+      <div class="flex flex-col items-center h-screen bg-background">
+        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div class="max-w-md mx-auto space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+              <Icon name="sparkle" class="text-4xl text-primary" />
+            </div>
+
+            <div class="space-y-3">
+              <h1 class="text-3xl font-bold text-foreground">Better recommendations?</h1>
+              <p class="text-lg text-muted-foreground">
+                Allow Neodate to use your encrypted preferences for personalized recommendations.
+              </p>
+            </div>
+
+            <div class="text-left bg-card rounded-2xl p-4 border border-border space-y-3">
+              <div class="flex items-start gap-3">
+                <Icon name="check" weight="bold" class="text-green-400 mt-0.5" />
+                <p class="text-sm text-foreground">Better match suggestions based on your preferences</p>
+              </div>
+              <div class="flex items-start gap-3">
+                <Icon name="check" weight="bold" class="text-green-400 mt-0.5" />
+                <p class="text-sm text-foreground">You can revoke access anytime</p>
+              </div>
+              <div class="flex items-start gap-3">
+                <Icon name="lock-simple" weight="bold" class="text-blue-400 mt-0.5" />
+                <p class="text-sm text-foreground">Your data stays encrypted — we only see what we need</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full px-6 pb-6">
+          <div class="max-w-md mx-auto space-y-3">
+            <button
+              class="w-full h-14 px-10 text-lg font-medium rounded-full bg-primary text-primary-foreground"
+              onClick={() => alert('Allowed until revoked')}
+            >
+              Allow until revoked
+            </button>
+            <button
+              class="w-full h-12 px-6 text-base font-medium rounded-full border border-border hover:bg-secondary/50"
+              onClick={() => alert('Allowed for 24h')}
+            >
+              Allow for 24 hours
+            </button>
+            <button
+              class="w-full text-center text-muted-foreground hover:text-foreground py-2"
+              onClick={() => alert('Not now')}
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  },
+}
+
+// =============================================================================
+// VERIFICATION (Self.xyz - after browsing)
 // =============================================================================
 
 /** Verification: Prompt */
@@ -724,7 +1078,6 @@ export const Verify_Prompt: Story = {
   render: () => {
     return (
       <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
         <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <div class="max-w-md mx-auto space-y-6">
             <div class="w-20 h-20 mx-auto rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -738,7 +1091,6 @@ export const Verify_Prompt: Story = {
               </p>
             </div>
 
-            {/* Benefits */}
             <div class="text-left space-y-3 bg-card rounded-2xl p-4 border border-border">
               <div class="flex items-start gap-3">
                 <Icon name="check" weight="bold" class="text-green-400" />
@@ -765,7 +1117,6 @@ export const Verify_Prompt: Story = {
           </div>
         </div>
 
-        {/* Footer */}
         <div class="w-full px-6 pb-6 space-y-3">
           <div class="max-w-md mx-auto space-y-3">
             <button
@@ -779,84 +1130,6 @@ export const Verify_Prompt: Story = {
               onClick={() => alert('Skip for now!')}
             >
               Maybe later
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  },
-}
-
-/** Verification: Scanning */
-export const Verify_Scanning: Story = {
-  name: 'Verify: Scanning',
-  render: () => {
-    return (
-      <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
-        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-md mx-auto space-y-6">
-            {/* Camera viewfinder placeholder */}
-            <div class="w-64 h-80 mx-auto rounded-2xl bg-card border-2 border-dashed border-border flex items-center justify-center">
-              <div class="space-y-3 text-center">
-                <div class="w-12 h-12 mx-auto rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                <p class="text-muted-foreground">Scanning passport...</p>
-              </div>
-            </div>
-
-            <p class="text-sm text-muted-foreground">
-              Hold your passport steady in the frame. NFC scanning will begin automatically.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  },
-}
-
-/** Verification: Success */
-export const Verify_Success: Story = {
-  name: 'Verify: Success',
-  render: () => {
-    return (
-      <div class="flex flex-col items-center h-screen bg-background">
-        {/* Content */}
-        <div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div class="max-w-md mx-auto space-y-6">
-            <div class="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
-              <Icon name="check-circle" weight="fill" class="text-4xl text-emerald-500" />
-            </div>
-
-            <div class="space-y-3">
-              <h1 class="text-3xl font-bold text-foreground">Verified!</h1>
-              <p class="text-lg text-muted-foreground">
-                You now have full access. Your verified age and nationality are stored securely.
-              </p>
-            </div>
-
-            {/* What was verified */}
-            <div class="text-left space-y-2 bg-card rounded-2xl p-4 border border-border">
-              <p class="text-sm text-muted-foreground">Verified info</p>
-              <div class="flex justify-between">
-                <span class="text-foreground">Age range</span>
-                <span class="text-muted-foreground">25-29</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-foreground">Nationality</span>
-                <span class="text-muted-foreground">US</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div class="w-full px-6 pb-6">
-          <div class="max-w-md mx-auto">
-            <button
-              class="w-full h-14 px-10 text-lg font-medium rounded-full bg-primary text-primary-foreground"
-              onClick={() => alert('Done!')}
-            >
-              Done
             </button>
           </div>
         </div>

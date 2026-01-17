@@ -22,11 +22,16 @@ export interface Message {
   content: string
   sender: 'user' | 'other'
   timestamp: Date
+  optimistic?: boolean
 }
 
 export interface ConversationProps {
   chatId: string
   name: string
+  /** Optional identity label (e.g. ENS or address) for non-AI chats */
+  identityLabel?: string
+  /** Optional subtitle line under the name */
+  subtitle?: string
   avatarUrl?: string
   online?: boolean
   isPinned?: boolean
@@ -190,21 +195,30 @@ export const Conversation: Component<ConversationProps> = (props) => {
 
         {/* Avatar and name */}
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <Avatar
-            src={props.avatarUrl}
-            fallback={props.name}
-            size="lg"
-            online={props.online}
-          />
+          <Show when={props.isAIChat}>
+            <Avatar
+              src={props.avatarUrl}
+              fallback={props.name}
+              size="md"
+              online={props.online}
+            />
+          </Show>
           <div class="min-w-0">
             <h2 class="text-base font-semibold truncate flex items-center gap-1">
-              {props.name}
+              {props.identityLabel ?? props.name}
               {props.isPinned && (
                 <Icon name="sparkle" weight="fill" class="text-primary text-sm" />
               )}
             </h2>
-            <Show when={props.online}>
-              <p class="text-xs text-muted-foreground">Online</p>
+            <Show
+              when={props.subtitle}
+              fallback={
+                <Show when={props.online}>
+                  <p class="text-xs text-muted-foreground">Online</p>
+                </Show>
+              }
+            >
+              <p class="text-xs text-muted-foreground">{props.subtitle}</p>
             </Show>
           </div>
         </div>

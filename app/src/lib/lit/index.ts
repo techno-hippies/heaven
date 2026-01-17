@@ -25,5 +25,5 @@ export { registerWithEoa, loginWithEoa, getExistingPkpForEoa } from './auth-eoa'
 // PKP auth context
 export { createPKPAuthContext, getCachedAuthContext, clearAuthContext } from './auth-pkp'
 
-// Message signing
-export { signMessageWithPKP } from './signer-pkp'
+// Message and transaction signing
+export { signMessageWithPKP, signTransactionWithPKP } from './signer-pkp'

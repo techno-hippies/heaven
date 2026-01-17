@@ -11,18 +11,22 @@
 
 import { type ParentComponent, onCleanup } from 'solid-js'
 import { createConfig, http, reconnect } from '@wagmi/core'
-import { mainnet } from '@wagmi/core/chains'
+import { mainnet, sepolia } from '@wagmi/core/chains'
 import { injected } from '@wagmi/connectors'
+
+// RPC URL for Sepolia (from env or default)
+const SEPOLIA_RPC = import.meta.env.VITE_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com'
 
 // Create wagmi config with injected connector only
 // We don't need WalletConnect for now - keeps it simple
 export const wagmiConfig = createConfig({
-  chains: [mainnet],
+  chains: [mainnet, sepolia],
   connectors: [
     injected(),
   ],
   transports: {
     [mainnet.id]: http(),
+    [sepolia.id]: http(SEPOLIA_RPC),
   },
 })
 
@@ -53,5 +57,9 @@ export {
   getAccount,
   getWalletClient,
   watchAccount,
+  writeContract,
+  simulateContract,
+  waitForTransactionReceipt,
+  switchChain,
   type GetAccountReturnType,
 } from '@wagmi/core'

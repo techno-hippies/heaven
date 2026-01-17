@@ -135,6 +135,7 @@ const DrawerContent: ParentComponent<DrawerContentProps> = (props) => {
             label="Close"
             variant="ghost"
             size="md"
+            class="focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </DrawerClose>
 
@@ -181,7 +182,7 @@ const DrawerTitle: ParentComponent<{ class?: string }> = (props) => {
 
 const DrawerDescription: ParentComponent<{ class?: string }> = (props) => {
   return (
-    <Drawer.Description class={cn('text-sm text-muted-foreground', props.class)}>
+    <Drawer.Description class={cn('text-muted-foreground', props.class)}>
       {props.children}
     </Drawer.Description>
   )
