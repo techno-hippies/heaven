@@ -154,7 +154,7 @@ Privacy-first dating app with DNS-behavioral matching, FHE compatibility, and de
 | `workers/likes-api/` | `/workers/likes-api/` | Like submission |
 | `workers/relayer/` | `/workers/relayer/` | Meta-tx relayer |
 | `workers/suggestions/` | `/workers/suggestions/` | Candidate suggestions |
-| `contracts/neodate/` | Already in `/contracts/zama-fhe/` | FHE contracts |
+| `contracts/dating/` | `/contracts/dating/` | FHE matching contracts |
 | `lit-actions/` | `/lit-actions/` | PKP actions |
 
 ---
@@ -1321,14 +1321,15 @@ async function checkVpnStatus(): Promise<boolean> {
 
 ## Smart Contracts
 
-### Zama fhEVM (contracts/zama-fhe/)
+### Dating Contracts (contracts/dating/)
 
 | Contract | Purpose |
 |----------|---------|
-| **DatingV2.sol** | FHE matching with encrypted preferences |
+| **Dating.sol** | FHE matching with encrypted preferences |
 | **Directory.sol** | Public profile data (avatar, region) |
+| **PartnerLink.sol** | Public mutual partner badge |
 
-### L1 Ethereum (contracts/eth-l1/)
+### Name Registry (contracts/name-registry/)
 
 ENS subname registry for `*.neodate.eth` identities.
 
@@ -1340,7 +1341,7 @@ ENS subname registry for `*.neodate.eth` identities.
 | Records | `0xb6B1A8F7AE2f55C1dD1f4AC5Be7C0eEA63B54129` |
 | Resolver | `0x7509DcA660b572Ee41Be08f73CB8f3908437858B` |
 
-See [contracts/eth-l1/CLAUDE.md](contracts/eth-l1/CLAUDE.md) for details.
+See [contracts/name-registry/CLAUDE.md](contracts/name-registry/CLAUDE.md) for details.
 
 ### Privacy Model
 

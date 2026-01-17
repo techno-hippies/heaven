@@ -25,7 +25,7 @@ Use **bun** for all package operations:
 
 ```
 neodate/
-├── app/                    # SolidJS web app (you are here)
+├── app/                    # SolidJS web app
 │   └── src/
 │       ├── components/ui/  # Base components
 │       ├── components/icons/
@@ -34,7 +34,9 @@ neodate/
 ├── apps/
 │   ├── android/            # Kotlin VPN app
 │   └── desktop/            # Tauri VPN client
-├── contracts/zama-fhe/     # FHE contracts
+├── contracts/
+│   ├── name-registry/      # ENS subname NFTs (L1)
+│   └── dating/             # FHE matching (Directory, Dating, PartnerLink)
 ├── services/dns-server/    # Rust DNS gateway
 ├── workers/                # Cloudflare Workers
 └── lit-actions/            # PKP actions

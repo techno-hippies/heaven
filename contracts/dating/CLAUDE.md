@@ -4,6 +4,33 @@
 
 A privacy-first dating app using Zama's Fully Homomorphic Encryption (fhEVM) to enable encrypted compatibility matching without revealing user preferences or dealbreakers.
 
+## Gas Costs (L1 Mainnet @ 0.033 gwei, ETH $3,300)
+
+| Contract | Function | Gas | Cost |
+|----------|----------|-----|------|
+| **Directory** | `registerOrUpdateProfile()` | 138k | **$0.015** |
+| **Directory** | update existing | 42k | $0.005 |
+| **Dating** | `setProfile()` | 6.6M | **$0.72** |
+| **Dating** | `sendLike()` | 2.0M | **$0.22** |
+| **Dating** | `finalizeMatch()` | ~3-5M | $0.33-0.55 |
+
+**Full onboarding:** ~$0.75 (Directory + Dating profile)
+**Per like:** $0.22
+
+### Why Dating is expensive
+
+```
+12 attributes × 5 encrypted values = 60 FHE operations
+Each FHE.fromExternal + FHE.allowThis ≈ 100k gas
+60 × 100k = 6M gas
+```
+
+### Optimization opportunities
+
+1. **Move to L2** (Base/Arbitrum) → ~100x cheaper ($0.007 per profile)
+2. **Reduce attributes** → fewer FHE ops
+3. **Lazy encrypt** → only encrypt attributes with filters enabled
+
 ## Package Manager
 
 Always use **bun** instead of npm:
@@ -439,7 +466,7 @@ DatingV2
 ## Key Files
 
 ```
-contracts/zama-fhe/
+contracts/dating/
 ├── contracts/
 │   ├── Dating.sol        # Core FHE dating contract
 │   ├── Directory.sol     # Public profile storage

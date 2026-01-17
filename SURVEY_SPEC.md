@@ -241,7 +241,7 @@ For Neodate, recommend **browser extension flow** to maintain no-custody model.
 Dating.sol exposes a public view function for match verification:
 
 ```solidity
-// contracts/zama-fhe/contracts/Dating.sol:665-667
+// contracts/dating/contracts/Dating.sol:665-667
 function areMatched(address a, address b) external view returns (bool) {
     return isMatch[a][b];
 }

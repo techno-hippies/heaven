@@ -1,6 +1,6 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers, fhevm } from "hardhat";
-import { DatingV2, DatingV2__factory, Directory, Directory__factory } from "../types";
+import { Dating, Dating__factory, Directory, Directory__factory } from "../types";
 import { expect } from "chai";
 import { FhevmType } from "@fhevm/hardhat-plugin";
 import { keccak256, solidityPacked, AbiCoder } from "ethers";
@@ -142,9 +142,9 @@ function defaultProfile(): {
   return { values, prefMasks, prefMins, prefMaxs, revealFlags };
 }
 
-describe("DatingV2", function () {
+describe("Dating", function () {
   let signers: Signers;
-  let datingContract: DatingV2;
+  let datingContract: Dating;
   let datingContractAddress: string;
   let directoryContract: Directory;
   let directoryContractAddress: string;
@@ -175,14 +175,14 @@ describe("DatingV2", function () {
     )) as Directory;
     directoryContractAddress = await directoryContract.getAddress();
 
-    // Deploy DatingV2
-    const datingFactory = (await ethers.getContractFactory("DatingV2")) as DatingV2__factory;
+    // Deploy Dating
+    const datingFactory = (await ethers.getContractFactory("Dating")) as Dating__factory;
     datingContract = (await datingFactory.deploy(
       signers.deployer.address, // admin
       directoryContractAddress,
       signers.oracle.address,
       signers.relayer.address
-    )) as DatingV2;
+    )) as Dating;
     datingContractAddress = await datingContract.getAddress();
   });
 
@@ -316,7 +316,7 @@ describe("DatingV2", function () {
       // EIP-712 signing by user
       const domain = {
         name: "NeoDate",
-        version: "2",
+        version: "3",
         chainId: 31337,
         verifyingContract: datingContractAddress,
       };
@@ -353,7 +353,7 @@ describe("DatingV2", function () {
     it("should reject non-relayer calling authorizeLikes", async function () {
       const candidateSetRoot = keccak256(solidityPacked(["string"], ["test-root"]));
       const signature = await signers.alice.signTypedData(
-        { name: "NeoDate", version: "2", chainId: 31337, verifyingContract: datingContractAddress },
+        { name: "NeoDate", version: "3", chainId: 31337, verifyingContract: datingContractAddress },
         { LikeAuthorization: [
           { name: "candidateSetRoot", type: "bytes32" },
           { name: "maxLikes", type: "uint8" },
@@ -466,7 +466,7 @@ describe("DatingV2", function () {
 
       const domain = {
         name: "NeoDate",
-        version: "2",
+        version: "3",
         chainId: 31337,
         verifyingContract: datingContractAddress,
       };
@@ -513,7 +513,7 @@ describe("DatingV2", function () {
 
       const domain = {
         name: "NeoDate",
-        version: "2",
+        version: "3",
         chainId: 31337,
         verifyingContract: datingContractAddress,
       };
@@ -876,7 +876,7 @@ describe("DatingV2", function () {
 
       const domain = {
         name: "NeoDate",
-        version: "2",
+        version: "3",
         chainId: 31337,
         verifyingContract: datingContractAddress,
       };

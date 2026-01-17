@@ -1,0 +1,11 @@
+name = "survey"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+# Filebase IPFS gateway for reads
+IPFS_GATEWAY = "https://ipfs.filebase.io/ipfs"
+
+# Secrets (set via: wrangler secret put FILEBASE_API_KEY)
+# FILEBASE_API_KEY = "..."

@@ -12,6 +12,17 @@ Think of it like ENS, but for our custom TLDs.
 
 ---
 
+## Gas Costs (L1 Mainnet)
+
+| Function | Gas | Cost @ 0.033 gwei |
+|----------|-----|-------------------|
+| `register()` | 175k | **$0.02** |
+| `renew()` | ~50k | ~$0.005 |
+
+*Costs assume ETH @ $3,300. At higher gas (5 gwei), multiply by ~150x.*
+
+---
+
 ## The Three TLDs
 
 | TLD | Example | Price | Who It's For |
@@ -173,7 +184,7 @@ cast send $REGISTRAR "setRegistrationsOpen(bool)" true --private-key $PK
 ## File Structure
 
 ```
-contracts/eth-l1/
+contracts/name-registry/
 ├── src/
 │   ├── SubnameRegistrarV2.sol  # Main registrar (use this)
 │   ├── DutchAuctionHouse.sol   # Premium name auctions
