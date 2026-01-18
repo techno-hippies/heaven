@@ -1,4 +1,4 @@
-# Noir Date - Zama FHE Client
+# Neodate V3 - Client Encoding
 
 ## Package Manager
 
@@ -7,59 +7,82 @@ Always use Bun, never npm/yarn/pnpm:
 - `bun add <pkg>` not `npm install <pkg>`
 - `bun run <script>` not `npm run <script>`
 
-## Stack
+## V3 Changes
 
-- **SolidJS** - Not React
-- **Vite** - Dev server and bundler
-- **Storybook** - Component development (`bun run storybook`)
-- **Tailwind CSS v4** - Styling
-- **phosphor-solid** - Icons (no emojis in UI)
+V3 is minimal - only age, gender identity, and desired gender mask are encoded.
+All other filtering happens off-chain via candidate sets.
 
-## Icons
+## Usage
 
-Use phosphor-solid, not emojis:
-```tsx
-import { Lock, Eye, X } from 'phosphor-solid'
+```typescript
+import {
+  GenderIdentity,
+  GenderBucket,
+  createBasicsFromUI,
+  encodeBasics,
+  decodeAgeBucket,
+  decodeGenderId,
+} from './encoding';
 
-<Lock size={20} weight="bold" />
+// Create config from UI state
+const config = createBasicsFromUI(
+  29,                      // age
+  GenderIdentity.WOMAN,    // my gender
+  true,                    // wants men
+  false,                   // wants women
+  false,                   // wants non-binary
+  true,                    // share age on match
+  true                     // share gender on match
+);
+
+// Encode for contract
+const encoded = encodeBasics(config);
+// {
+//   claimedAge: 29,
+//   genderId: 2,
+//   desiredMask: 1,  // bit 0 only (men)
+//   shareAge: true,
+//   shareGender: true,
+// }
+
+// Decode shared values from match
+const ageRange = decodeAgeBucket(28);  // "28-32"
+const gender = decodeGenderId(1);      // "Man"
 ```
 
-Common icons:
-- Lock, LockOpen - Privacy/security
-- Eye, EyeSlash - Visibility
-- Check, X - Confirm/cancel
-- Heart, HeartBreak - Like/pass
-- User, Users - Profile
-- Sliders, Funnel - Filters/preferences
-- Shield, ShieldCheck - Verified
+## Constants
 
-## Commands
+```typescript
+// Gender identity (1-5)
+G_MAN = 1
+G_WOMAN = 2
+G_TRANS_MAN = 3
+G_TRANS_WOMAN = 4
+G_NON_BINARY = 5
 
-```bash
-bun install          # Install deps
-bun run storybook    # Component dev (port 6006)
-bun run dev          # Vite dev server
-bun run build        # Production build
+// Desired mask bits
+MASK_MEN = 0x01     // bit 0
+MASK_WOMEN = 0x02   // bit 1
+MASK_NB = 0x04      // bit 2
+MASK_EVERYONE = 0x07
+
+// Unknown sentinel
+UNKNOWN_U8 = 255
 ```
 
-## Project Structure
+## Directory V2 Helpers
 
-```
-src/
-  components/
-    atoms/       # Primitives (OptionCard, ScaleButton, PolicyChip)
-    molecules/   # Combinations (QuestionCard, etc)
-    screens/     # Full-page components
-    ui/          # Generic UI (Button, Input, etc)
-    dating/      # Dating-specific (deprecated, use atoms)
-  lib/
-    utils.ts     # cn() helper
-encoding.ts      # Contract types and encoding
+```typescript
+import { ageToPublicBucket, AGE_BUCKET_LABELS } from './encoding';
+
+// Convert age to public bucket
+const bucket = ageToPublicBucket(29);  // 2 (25-29)
+const label = AGE_BUCKET_LABELS[bucket]; // "25-29"
 ```
 
 ## Contracts
 
-See `../contracts/DatingV2.sol` and `../contracts/Directory.sol` for:
-- 12 encrypted attributes (FHE)
-- NONE/DEALBREAKER/CRITERIA policies
-- 0=hidden encoding for public fields
+See `../contracts/Dating.sol` (DatingV3) and `../contracts/Directory.sol` (DirectoryV2):
+- 3 encrypted values: age, genderId, desiredMask
+- 2 share flags: shareAge, shareGender
+- Match-time symmetric enforcement

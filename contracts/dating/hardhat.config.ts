@@ -58,6 +58,12 @@ const config: HardhatUserConfig = {
       chainId: 11155111,
       accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],
     },
+    // Base Sepolia - L2 for cheap storage (SurveyRegistry)
+    baseSepolia: {
+      url: process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org",
+      chainId: 84532,
+      accounts: DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [],
+    },
   },
   paths: {
     artifacts: "./artifacts",

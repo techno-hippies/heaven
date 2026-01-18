@@ -8,4 +8,10 @@ ENVIRONMENT = "production"
 IPFS_GATEWAY = "https://ipfs.filebase.io/ipfs"
 
 # Secrets (set via: wrangler secret put FILEBASE_API_KEY)
-# FILEBASE_API_KEY = "..."
+# FILEBASE_API_KEY = "..." (SET - points to "preferences" bucket)
+
+# Custom domain (optional - set up in Cloudflare dashboard)
+# To use survey.neodate.xyz:
+# 1. Go to Workers & Pages > survey > Settings > Domains & Routes
+# 2. Add custom domain: survey.neodate.xyz
+# Current URL: https://survey.deletion-backup782.workers.dev

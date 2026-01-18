@@ -1,0 +1,7 @@
+node_modules
+dist
+dist-ssr
+.vite
+storybook-static
+*.local
+.DS_Store

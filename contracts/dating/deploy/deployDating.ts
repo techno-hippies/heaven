@@ -5,22 +5,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy, get } = hre.deployments;
 
-  // Get Directory address from previous deployment
-  const directory = await get("Directory");
+  // Get DirectoryV2 address from previous deployment
+  const directory = await get("DirectoryV2");
 
   // Roles: all deployer for now (configure separately for production)
   const admin = deployer;
   const oracle = process.env.ORACLE_ADDRESS ?? deployer;
   const relayer = process.env.RELAYER_ADDRESS ?? deployer;
 
-  // Deploy Dating contract with constructor args
-  const deployedDating = await deploy("Dating", {
+  // Deploy DatingV3 contract with constructor args
+  const deployedDating = await deploy("DatingV3", {
     from: deployer,
     args: [admin, directory.address, oracle, relayer],
     log: true,
   });
 
-  console.log(`Dating contract: `, deployedDating.address);
+  console.log(`DatingV3 contract: `, deployedDating.address);
   console.log(`  - admin: ${admin}`);
   console.log(`  - directory: ${directory.address}`);
   console.log(`  - oracle: ${oracle}`);
@@ -29,5 +29,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 export default func;
 func.id = "deploy_dating";
-func.tags = ["Dating"];
-func.dependencies = ["Directory"]; // Deploy after Directory
+func.tags = ["DatingV3"];
+func.dependencies = ["DirectoryV2"]; // Deploy after DirectoryV2

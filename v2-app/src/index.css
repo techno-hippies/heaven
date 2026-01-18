@@ -1,0 +1,461 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@import "@fontsource/geist/latin-400.css";
+@import "@fontsource/geist/latin-500.css";
+@import "@fontsource/geist/latin-600.css";
+@import "@fontsource/geist/latin-700.css";
+
+/* Orbit font - for titles only */
+@font-face {
+  font-family: 'Orbit';
+  src: url('/fonts/Orbit-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Corvu drawer transitioning variant */
+@custom-variant corvu-transitioning (&[data-transitioning]);
+
+@theme {
+  --font-sans: 'Geist', -apple-system, system-ui, sans-serif;
+  --font-title: 'Orbit', 'Geist', -apple-system, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --font-serif: ui-serif, Georgia, serif;
+  --radius: 0.75rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Chat-specific colors */
+  --color-chat-user: var(--chat-user);
+  --color-chat-user-foreground: var(--chat-user-foreground);
+  --color-chat-other: var(--chat-other);
+  --color-chat-other-foreground: var(--chat-other-foreground);
+}
+
+/*
+ * Neodate Theme - Light Mode
+ * Clean, warm off-white with coral/rose accents
+ * Modern dating app feel - friendly and approachable
+ */
+:root {
+  --vh: 1vh;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Off-white/cream background - warm and inviting */
+  --background: oklch(0.98 0.005 80);
+  --foreground: oklch(0.20 0.02 260);
+
+  /* Cards - pure white for contrast */
+  --card: oklch(1.00 0 0);
+  --card-foreground: oklch(0.20 0.02 260);
+
+  --popover: oklch(1.00 0 0);
+  --popover-foreground: oklch(0.20 0.02 260);
+
+  /* Primary: Warm coral/rose - friendly, romantic */
+  --primary: oklch(0.65 0.18 15);
+  --primary-foreground: oklch(1.00 0 0);
+
+  /* Secondary: Light warm gray */
+  --secondary: oklch(0.94 0.01 80);
+  --secondary-foreground: oklch(0.30 0.02 260);
+
+  /* Muted: Soft gray for less emphasis */
+  --muted: oklch(0.92 0.005 80);
+  --muted-foreground: oklch(0.50 0.02 260);
+
+  /* Accent: Soft rose/pink highlight */
+  --accent: oklch(0.92 0.04 350);
+  --accent-foreground: oklch(0.55 0.18 350);
+
+  /* Destructive: Soft red */
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(1.00 0 0);
+
+  /* Borders and inputs */
+  --border: oklch(0.90 0.01 80);
+  --input: oklch(0.94 0.01 80);
+  --ring: oklch(0.65 0.18 15);
+
+  /* Chat message colors */
+  --chat-user: oklch(0.65 0.18 15);
+  --chat-user-foreground: oklch(1.00 0 0);
+  --chat-other: oklch(0.94 0.01 80);
+  --chat-other-foreground: oklch(0.20 0.02 260);
+
+  /* Chart colors - warm palette */
+  --chart-1: oklch(0.65 0.18 15);
+  --chart-2: oklch(0.68 0.14 350);
+  --chart-3: oklch(0.75 0.12 60);
+  --chart-4: oklch(0.60 0.15 280);
+  --chart-5: oklch(0.70 0.15 180);
+
+  --radius: 0.75rem;
+
+  /* Sidebar - slightly darker cream */
+  --sidebar: oklch(0.96 0.008 80);
+  --sidebar-foreground: oklch(0.20 0.02 260);
+  --sidebar-primary: oklch(0.65 0.18 15);
+  --sidebar-primary-foreground: oklch(1.00 0 0);
+  --sidebar-accent: oklch(0.92 0.02 80);
+  --sidebar-accent-foreground: oklch(0.55 0.18 15);
+  --sidebar-border: oklch(0.90 0.01 80);
+  --sidebar-ring: oklch(0.65 0.18 15);
+
+  --font-sans: 'Geist', -apple-system, system-ui, sans-serif;
+  --font-title: 'Orbit', 'Geist', -apple-system, system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  --shadow-color: 0 0 0;
+  --shadow-opacity: 0.08;
+  --spacing: 0.25rem;
+  --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+  --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.10);
+  --shadow-md: 0 6px 10px -2px rgb(0 0 0 / 0.12);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.14);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.16);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.20);
+
+  /* Kobalte variables */
+  --kb-accordion-content-height: auto;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  a {
+    @apply hover:underline;
+  }
+}
+
+/* Heart pulse animation - for matches and likes */
+@keyframes heart-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.15);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-heart-pulse {
+  animation: heart-pulse 0.6s ease-in-out;
+}
+
+/* Floating hearts animation */
+@keyframes heart-float {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150px) scale(0.5) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+.animate-heart-float {
+  animation: heart-float 1.5s ease-out forwards;
+}
+
+/* Match reveal animation */
+@keyframes match-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-5deg);
+    filter: blur(8px);
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+    filter: blur(0);
+  }
+}
+
+.animate-match-reveal {
+  animation: match-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Glow effect for active/online status */
+@keyframes status-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px oklch(0.70 0.18 145 / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px oklch(0.70 0.18 145 / 0.6);
+  }
+}
+
+.animate-status-glow {
+  animation: status-glow 2s ease-in-out infinite;
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(1 0 0 / 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Bounce in for success states */
+@keyframes bounce-in {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Slide up animation for cards */
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+/* Swipe animations */
+@keyframes swipe-right {
+  0% { transform: translateX(0) rotate(0); opacity: 1; }
+  100% { transform: translateX(150%) rotate(20deg); opacity: 0; }
+}
+
+@keyframes swipe-left {
+  0% { transform: translateX(0) rotate(0); opacity: 1; }
+  100% { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+}
+
+@keyframes swipe-up {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-150%) scale(0.9); opacity: 0; }
+}
+
+.animate-swipe-right {
+  animation: swipe-right 0.4s ease-out forwards;
+}
+
+.animate-swipe-left {
+  animation: swipe-left 0.4s ease-out forwards;
+}
+
+.animate-swipe-up {
+  animation: swipe-up 0.35s ease-out forwards;
+}
+
+/* Star burst animation for super like */
+@keyframes star-burst {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-star-burst {
+  animation: star-burst 0.4s ease-out;
+}
+
+/* Message bubble animation */
+@keyframes message-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-in {
+  animation: message-in 0.25s ease-out forwards;
+}
+
+/* Typing indicator dots */
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.animate-typing-1 { animation: typing-dot 1s ease-in-out infinite; }
+.animate-typing-2 { animation: typing-dot 1s ease-in-out infinite 0.15s; }
+.animate-typing-3 { animation: typing-dot 1s ease-in-out infinite 0.3s; }
+
+/* Voice call animations */
+@keyframes voice-connecting {
+  0%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes voice-idle {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes voice-speaking {
+  0%, 100% {
+    transform: scaleY(0.4);
+    opacity: 0.7;
+  }
+  25% {
+    transform: scaleY(1.8);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleY(0.6);
+    opacity: 0.8;
+  }
+  75% {
+    transform: scaleY(1.4);
+    opacity: 1;
+  }
+}
+
+@keyframes voice-pulse {
+  0%, 100% {
+    transform: scale(1.3);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.4;
+  }
+}
+
+.animate-voice-connecting { animation: voice-connecting 1.2s ease-in-out infinite; }
+.animate-voice-idle { animation: voice-idle 2s ease-in-out infinite; }
+.animate-voice-speaking { animation: voice-speaking 0.4s ease-in-out infinite; }
+.animate-voice-pulse { animation: voice-pulse 1.5s ease-in-out infinite; }
+
+/* Spin slow for loading indicators */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+/* Accordion animations */
+@keyframes accordion-down {
+  from { height: 0; opacity: 0; }
+  to { height: var(--kb-accordion-content-height); opacity: 1; }
+}
+
+@keyframes accordion-up {
+  from { height: var(--kb-accordion-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+/* Hide scrollbars while maintaining scroll functionality */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .vh-screen {
+    min-height: calc(var(--vh, 1vh) * 100);
+  }
+  .h-vh-screen {
+    height: calc(var(--vh, 1vh) * 100);
+  }
+  .pb-safe {
+    padding-bottom: calc(1rem + var(--safe-area-bottom));
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .font-title {
+    font-family: var(--font-title);
+  }
+}

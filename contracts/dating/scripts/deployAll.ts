@@ -37,21 +37,21 @@ async function main() {
   console.log(`  Relayer: ${relayer}`);
   console.log(`  Attestor: ${attestor}`);
 
-  // 1. Deploy Directory
-  console.log("\n[1/3] Deploying Directory...");
-  const Directory = await ethers.getContractFactory("Directory");
+  // 1. Deploy DirectoryV2
+  console.log("\n[1/3] Deploying DirectoryV2...");
+  const Directory = await ethers.getContractFactory("DirectoryV2");
   const directory = await Directory.deploy(admin, attestor);
   await directory.waitForDeployment();
   const directoryAddr = await directory.getAddress();
-  console.log(`  Directory: ${directoryAddr}`);
+  console.log(`  DirectoryV2: ${directoryAddr}`);
 
-  // 2. Deploy Dating (depends on Directory)
-  console.log("\n[2/3] Deploying Dating...");
-  const Dating = await ethers.getContractFactory("Dating");
+  // 2. Deploy DatingV3 (depends on DirectoryV2)
+  console.log("\n[2/3] Deploying DatingV3...");
+  const Dating = await ethers.getContractFactory("DatingV3");
   const dating = await Dating.deploy(admin, directoryAddr, oracle, relayer);
   await dating.waitForDeployment();
   const datingAddr = await dating.getAddress();
-  console.log(`  Dating: ${datingAddr}`);
+  console.log(`  DatingV3: ${datingAddr}`);
 
   // 3. Deploy PartnerLink (independent)
   console.log("\n[3/3] Deploying PartnerLink...");
@@ -91,8 +91,8 @@ async function main() {
   console.log("=".repeat(60));
   console.log(`\nOutput written to: ${outputPath}`);
   console.log("\nContract Addresses:");
-  console.log(`  Directory:   ${directoryAddr}`);
-  console.log(`  Dating:      ${datingAddr}`);
+  console.log(`  DirectoryV2: ${directoryAddr}`);
+  console.log(`  DatingV3:    ${datingAddr}`);
   console.log(`  PartnerLink: ${partnerLinkAddr}`);
   console.log("\nNext steps:");
   console.log("  1. Update app/.env with contract addresses");

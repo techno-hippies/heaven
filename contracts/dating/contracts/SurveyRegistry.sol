@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
+
 /// @title SurveyRegistry - On-chain registry for encrypted survey responses
 /// @notice Maps wallet + schemaId to IPFS CID for portable, encrypted surveys
 /// @dev Lit Protocol uses areMatched() from Dating contract for access control
-contract SurveyRegistry {
+contract SurveyRegistry is EIP712, Nonces {
+    using ECDSA for bytes32;
     // ============ TYPES ============
 
     struct SurveyEntry {
@@ -44,7 +49,21 @@ contract SurveyRegistry {
         bytes32 indexed schemaIdBytes32
     );
 
+    event Registered(
+        address indexed user,
+        address indexed relayer,
+        bytes32 indexed surveyId,
+        string cid
+    );
+
+    bytes32 private constant REGISTER_TYPEHASH =
+        keccak256(
+            "Register(address user,bytes32 surveyId,bytes32 cidHash,uint8 encryptionMode,uint256 nonce,uint256 deadline)"
+        );
+
     // ============ WRITE FUNCTIONS ============
+
+    constructor() EIP712("SurveyRegistry", "1") {}
 
     /// @notice Register or update a survey response
     /// @param schemaIdBytes32 keccak256(utf8("schemaId:version"))
@@ -58,26 +77,46 @@ contract SurveyRegistry {
         require(bytes(responseCid).length > 0, "Empty CID");
         require(encryptionMode <= 2, "Invalid encryption mode");
 
-        address wallet = msg.sender;
-        bool isNew = bytes(surveys[wallet][schemaIdBytes32].responseCid).length == 0;
+        _register(msg.sender, schemaIdBytes32, responseCid, encryptionMode, msg.sender);
+    }
 
-        surveys[wallet][schemaIdBytes32] = SurveyEntry({
-            responseCid: responseCid,
-            encryptionMode: encryptionMode,
-            updatedAt: uint64(block.timestamp),
-            deleted: false
-        });
+    /// @notice Register on behalf of a user using an EIP-712 signature
+    /// @param user The user wallet that owns the survey entry
+    /// @param surveyId The schema ID
+    /// @param cid IPFS CID of the survey-response.json
+    /// @param encryptionMode 0=none, 1=matchOnly only, 2=tiered (has public+matchOnly+private)
+    /// @param deadline Unix timestamp (seconds) after which the signature is invalid
+    /// @param sig EIP-712 signature from the user
+    function registerFor(
+        address user,
+        bytes32 surveyId,
+        string calldata cid,
+        uint8 encryptionMode,
+        uint256 deadline,
+        bytes calldata sig
+    ) external {
+        require(bytes(cid).length > 0, "Empty CID");
+        require(encryptionMode <= 2, "Invalid encryption mode");
+        require(block.timestamp <= deadline, "Signature expired");
 
-        if (!hasSchema[wallet][schemaIdBytes32]) {
-            walletSchemas[wallet].push(schemaIdBytes32);
-            hasSchema[wallet][schemaIdBytes32] = true;
-        }
+        uint256 nonce = _useNonce(user);
+        bytes32 structHash = keccak256(
+            abi.encode(
+                REGISTER_TYPEHASH,
+                user,
+                surveyId,
+                keccak256(bytes(cid)),
+                encryptionMode,
+                nonce,
+                deadline
+            )
+        );
 
-        if (isNew) {
-            emit SurveyRegistered(wallet, schemaIdBytes32, responseCid, encryptionMode);
-        } else {
-            emit SurveyUpdated(wallet, schemaIdBytes32, responseCid, encryptionMode);
-        }
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = ECDSA.recover(digest, sig);
+        require(signer == user, "Invalid signature");
+
+        _register(user, surveyId, cid, encryptionMode, msg.sender);
     }
 
     /// @notice Delete a survey entry (blanks CID, keeps history in events)
@@ -150,5 +189,37 @@ contract SurveyRegistry {
             }
         }
         return count;
+    }
+
+    // ============ INTERNAL FUNCTIONS ============
+
+    function _register(
+        address wallet,
+        bytes32 schemaIdBytes32,
+        string calldata responseCid,
+        uint8 encryptionMode,
+        address relayer
+    ) internal {
+        bool isNew = bytes(surveys[wallet][schemaIdBytes32].responseCid).length == 0;
+
+        surveys[wallet][schemaIdBytes32] = SurveyEntry({
+            responseCid: responseCid,
+            encryptionMode: encryptionMode,
+            updatedAt: uint64(block.timestamp),
+            deleted: false
+        });
+
+        if (!hasSchema[wallet][schemaIdBytes32]) {
+            walletSchemas[wallet].push(schemaIdBytes32);
+            hasSchema[wallet][schemaIdBytes32] = true;
+        }
+
+        if (isNew) {
+            emit SurveyRegistered(wallet, schemaIdBytes32, responseCid, encryptionMode);
+        } else {
+            emit SurveyUpdated(wallet, schemaIdBytes32, responseCid, encryptionMode);
+        }
+
+        emit Registered(wallet, relayer, schemaIdBytes32, responseCid);
     }
 }

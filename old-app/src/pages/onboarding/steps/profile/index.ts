@@ -1,0 +1,12 @@
+// Profile steps - all "about me" fields with visibility toggle
+export { PhotoStep } from './PhotoStep'
+export { NameStep } from './NameStep'
+export { RegionStep } from './RegionStep'
+export { GenderStep } from './GenderStep'
+export { RelationshipStatusStep } from './RelationshipStatusStep'
+export { RelationshipStructureStep } from './RelationshipStructureStep'
+export { KidsStep } from './KidsStep'
+export { LookingForStep } from './LookingForStep'
+export { ReligionStep } from './ReligionStep'
+export { GroupPlayStep } from './GroupPlayStep'
+export { ProfilePreviewStep } from './ProfilePreviewStep'
