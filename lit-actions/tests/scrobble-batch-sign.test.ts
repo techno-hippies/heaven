@@ -1,11 +1,16 @@
 #!/usr/bin/env bun
 /**
- * Test Scrobble Batch Sign Lit Action
+ * Test Scrobble Batch Sign Lit Action (with Filebase pinning)
  *
  * Verifies:
- *  - action returns deterministic inner/digest
- *  - signature is present in result.signatures[sigName]
+ *  - Action pins batch JSON to Filebase IPFS
+ *  - Action returns deterministic inner/digest
+ *  - Signature is present in result.signatures[sigName]
  *  - recoverAddress(digest, signature) === PKP address
+ *
+ * Modes:
+ *  - Default: Uses encrypted Filebase key, pins real batch
+ *  - --skip-pin: Uses pre-computed cidBytesHex (fast, no Filebase)
  */
 
 import { createLitClient } from "@lit-protocol/lit-client";
@@ -13,9 +18,12 @@ import { createAuthManager, storagePlugins, ViemAccountAuthenticator } from "@li
 import { privateKeyToAccount } from "viem/accounts";
 import { Env } from "./shared/env";
 import { ethers } from "ethers";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const CONTRACT = process.env.CONTRACT_ADDRESS ?? "0xeeC197414D3656d1fb4bA0d6E60AD4160aF64378";
 const CHAIN_ID = Number(process.env.CHAIN_ID ?? "84532");
+const SKIP_PIN = process.argv.includes("--skip-pin");
 
 function extractSig(sigAny: any): string {
   if (!sigAny) throw new Error("missing signature: result.signatures[sigName] is empty");
@@ -52,6 +60,7 @@ async function main() {
   console.log(`   Env:         ${Env.name}`);
   console.log(`   Contract:    ${CONTRACT}`);
   console.log(`   Chain ID:    ${CHAIN_ID}`);
+  console.log(`   Skip pin:    ${SKIP_PIN}`);
 
   const pkpCreds = Env.loadPkpCreds();
   console.log(`   PKP address: ${pkpCreds.ethAddress}`);
@@ -98,17 +107,53 @@ async function main() {
   });
   console.log("✅ Auth context ready");
 
-  // deterministic test params
-  const cidBytesHex = "0x" + "01".repeat(36); // arbitrary fixed bytes for test
+  // Test parameters
   const startTs = 1700000000n;
   const endTs = 1700003599n;
-  const count = 123n;
   const nonce = 0n;
   const sigName = "scrobbleBatchSig_test";
 
-  console.log(`\n   CID bytes:    ${cidBytesHex.slice(0, 20)}...`);
+  // Build jsParams based on mode
+  let jsParams: any = {
+    pkpPublicKey: pkpCreds.publicKey,
+    contractAddress: CONTRACT,
+    chainId: CHAIN_ID,
+    startTs: startTs.toString(),
+    endTs: endTs.toString(),
+    nonce: nonce.toString(),
+    sigName,
+  };
+
+  if (SKIP_PIN) {
+    // Skip pinning mode - use pre-computed CID bytes
+    const cidBytesHex = "0x" + "01".repeat(36);
+    jsParams.skipPin = true;
+    jsParams.cidBytesHex = cidBytesHex;
+    jsParams.count = "123";
+    console.log(`\n   Mode: Skip pinning (using fake CID bytes)`);
+  } else {
+    // Real pinning mode - provide tracks and encrypted key
+    const tracks = [
+      { artist: "Radiohead", title: "Karma Police", album: "OK Computer", duration: 263, playedAt: 1700000100 },
+      { artist: "Portishead", title: "Glory Box", album: "Dummy", duration: 305, playedAt: 1700001000 },
+      { artist: "Massive Attack", title: "Teardrop", album: "Mezzanine", duration: 331, playedAt: 1700002000 },
+    ];
+
+    // Load encrypted Filebase key
+    const keyPath = join(Env.paths.keys, "scrobble", "filebase_api_key_scrobble.json");
+    const filebaseEncryptedKey = JSON.parse(readFileSync(keyPath, "utf-8"));
+
+    jsParams.tracks = tracks;
+    jsParams.count = String(tracks.length);
+    jsParams.filebaseEncryptedKey = filebaseEncryptedKey;
+
+    console.log(`\n   Mode: Real pinning (${tracks.length} tracks)`);
+    console.log(`   Tracks:`);
+    tracks.forEach((t, i) => console.log(`     ${i + 1}. ${t.artist} - ${t.title}`));
+  }
+
   console.log(`   startTs/endTs: ${startTs} / ${endTs}`);
-  console.log(`   count/nonce:  ${count} / ${nonce}`);
+  console.log(`   count/nonce:  ${jsParams.count} / ${nonce}`);
 
   console.log("\n🚀 Executing Lit Action...");
 
@@ -116,17 +161,7 @@ async function main() {
     const result = await litClient.executeJs({
       ipfsId: Env.cids.scrobble,
       authContext,
-      jsParams: {
-        pkpPublicKey: pkpCreds.publicKey,
-        contractAddress: CONTRACT,
-        chainId: CHAIN_ID,
-        cidBytesHex,
-        startTs: startTs.toString(),
-        endTs: endTs.toString(),
-        count: count.toString(),
-        nonce: nonce.toString(),
-        sigName,
-      },
+      jsParams,
     });
 
     console.log("✅ Lit Action executed");
@@ -148,11 +183,12 @@ async function main() {
 
     // local recompute (must match response)
     const user = ethers.computeAddress(pkpCreds.publicKey);
-    const cidHash = ethers.keccak256(ethers.getBytes(cidBytesHex));
+    const cidBytes = ethers.getBytes(response.cidBytesHex);
+    const cidHash = ethers.keccak256(cidBytes);
     const coder = ethers.AbiCoder.defaultAbiCoder();
     const encoded = coder.encode(
       ["uint256", "address", "address", "bytes32", "uint40", "uint40", "uint32", "uint64"],
-      [BigInt(CHAIN_ID), CONTRACT, user, cidHash, startTs, endTs, count, nonce]
+      [BigInt(CHAIN_ID), CONTRACT, user, cidHash, startTs, endTs, BigInt(jsParams.count), nonce]
     );
 
     const inner = ethers.keccak256(encoded);
@@ -180,6 +216,7 @@ async function main() {
     }
 
     console.log("\n✅ SUCCESS! Signature verifies and matches PKP address");
+    console.log(`   CID bytes: ${response.cidBytesHex.slice(0, 30)}...`);
     console.log(`   Signature: ${signature.slice(0, 20)}...${signature.slice(-8)}`);
 
   } catch (error: any) {

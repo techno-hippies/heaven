@@ -11,7 +11,7 @@ interface IRecords {
 
 /// @title SubnameRegistrar
 /// @notice ERC721 for ENS subdomain ownership on L1
-/// @dev Users purchase subdomains (e.g., alice.neodate.eth)
+/// @dev Users purchase subdomains (e.g., alice.heaven.eth)
 contract SubnameRegistrar is ERC721, Ownable {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -42,7 +42,7 @@ contract SubnameRegistrar is ERC721, Ownable {
                                  STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The parent ENS name without .eth (e.g., "neodate")
+    /// @notice The parent ENS name without .eth (e.g., "heaven")
     string public parentName;
 
     /// @notice The TLD (e.g., "eth")
@@ -193,7 +193,7 @@ contract SubnameRegistrar is ERC721, Ownable {
                               VIEWS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Get the full name for a token (e.g., "alice.neodate.eth")
+    /// @notice Get the full name for a token (e.g., "alice.heaven.eth")
     function fullName(uint256 tokenId) external view returns (string memory) {
         string memory label = tokenIdToLabel[tokenId];
         if (bytes(label).length == 0) return "";
@@ -262,7 +262,7 @@ contract SubnameRegistrar is ERC721, Ownable {
     }
 
     function _namehash(string calldata label) internal view returns (bytes32) {
-        // Compute namehash for label.parentName.tld (e.g., alice.neodate.eth)
+        // Compute namehash for label.parentName.tld (e.g., alice.heaven.eth)
         // ENS namehash: start with 0x00, iteratively hash each label from right to left
 
         // Start with empty node
@@ -271,7 +271,7 @@ contract SubnameRegistrar is ERC721, Ownable {
         // Hash TLD first (e.g., "eth")
         node = keccak256(abi.encodePacked(node, keccak256(bytes(tld))));
 
-        // Hash parent name (e.g., "neodate")
+        // Hash parent name (e.g., "heaven")
         node = keccak256(abi.encodePacked(node, keccak256(bytes(parentName))));
 
         // Hash the subname label (e.g., "alice")

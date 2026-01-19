@@ -85,7 +85,7 @@ export const SpiralTLD: Story = {
 
 /**
  * Reserved name - cannot be registered
- * Reserved names include: admin, root, system, neodate, support, help, etc.
+ * Reserved names include: admin, root, system, heaven, support, help, etc.
  */
 export const ReservedName: Story = {
   name: 'Reserved Name',

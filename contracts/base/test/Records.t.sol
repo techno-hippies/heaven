@@ -14,7 +14,7 @@ contract RecordsTest is Test {
     address bob = address(0x3);
     address operator = address(0x4);
 
-    string constant PARENT_NAME = "neodate";
+    string constant PARENT_NAME = "heaven";
     string constant TLD = "eth";
     uint256 constant PRICE_PER_YEAR = 0.01 ether;
     uint256 constant ONE_YEAR = 365 days;

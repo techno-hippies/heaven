@@ -53,7 +53,9 @@ const ACTIONS: Record<string, ActionDef> = {
     name: 'scrobble',
     path: 'actions/scrobble-batch-sign-v1.js',
     displayName: 'Scrobble Batch Sign v1',
-    keys: [], // No encrypted keys needed - only signs
+    keys: [
+      { name: 'filebase_api_key', envVar: 'FILEBASE_API_KEY' },
+    ],
   },
 };
 

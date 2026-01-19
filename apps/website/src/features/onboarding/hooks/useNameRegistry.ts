@@ -185,7 +185,7 @@ const isOffchainTld = (tldId: TldId) => OFFCHAIN_TLDS.includes(tldId)
 
 // Reserved names for off-chain TLDs (and Storybook demo)
 const RESERVED_NAMES = new Set([
-  'admin', 'root', 'system', 'neodate', 'support', 'help',
+  'admin', 'root', 'system', 'heaven', 'support', 'help',
   'official', 'mod', 'moderator', 'staff', 'team',
 ])
 

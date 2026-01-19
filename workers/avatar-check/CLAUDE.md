@@ -5,7 +5,7 @@ Cloudflare Worker for avatar upload moderation. Rejects real faces and NSFW cont
 ## Endpoint
 
 ```
-POST https://neodate-avatar-check.deletion-backup782.workers.dev/check
+POST https://heaven-avatar-check.deletion-backup782.workers.dev/check
 ```
 
 ## Request
@@ -13,7 +13,7 @@ POST https://neodate-avatar-check.deletion-backup782.workers.dev/check
 Multipart form data with `image` field:
 
 ```bash
-curl -X POST "https://neodate-avatar-check.deletion-backup782.workers.dev/check" \
+curl -X POST "https://heaven-avatar-check.deletion-backup782.workers.dev/check" \
   -F "image=@avatar.png;type=image/png"
 ```
 
@@ -67,7 +67,7 @@ POST /check ─────────►  Validate size/type
                               │
                               ▼
                          If allowed:
-                         R2.put() ─────────────────────► neodate-avatars
+                         R2.put() ─────────────────────► heaven-avatars
                               │
                               ▼
 ◄─────────────────────  { allowed, avatarKey }
@@ -110,7 +110,7 @@ bun run tail
 
 | Binding | Resource | Description |
 |---------|----------|-------------|
-| `AVATARS` | R2 bucket `neodate-avatars` | Approved avatar storage |
+| `AVATARS` | R2 bucket `heaven-avatars` | Approved avatar storage |
 
 ## Cost
 

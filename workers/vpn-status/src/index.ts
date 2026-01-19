@@ -4,7 +4,7 @@
  * DNS-based canary check for detecting if user is connected to Heaven VPN.
  *
  * Flow:
- * 1. Frontend generates random token, loads `https://<token>.vpncheck.neodate.app/pixel.png`
+ * 1. Frontend generates random token, loads `https://<token>.vpncheck.heaven.example/pixel.png`
  * 2. DNS server (when query hits our resolver) logs {token, seenAt} to D1
  * 3. Frontend polls `GET /vpn-status?token=<token>`
  * 4. This worker checks D1 and returns {connected: true/false}
@@ -35,7 +35,7 @@ export default {
     }
 
     // Handle pixel.png requests (DNS canary endpoint)
-    // These come from wildcard subdomains: <token>.vpncheck.neodate.app/pixel.png
+    // These come from wildcard subdomains: <token>.vpncheck.heaven.example/pixel.png
     if (url.pathname === "/pixel.png") {
       // Extract token from subdomain
       const hostname = url.hostname;

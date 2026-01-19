@@ -1,4 +1,4 @@
-name = "neodate-voice"
+name = "heaven-voice"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -13,7 +13,7 @@ AGORA_CUSTOM_LLM_BEARER_PREFIX = "neo_"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "neodate-voice"
+database_name = "heaven-voice"
 database_id = "17a75aea-374c-46f5-b80d-be9144485955"
 
 # Secrets (copied from hp-voice-worker):

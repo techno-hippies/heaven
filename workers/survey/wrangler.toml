@@ -11,7 +11,7 @@ IPFS_GATEWAY = "https://ipfs.filebase.io/ipfs"
 # FILEBASE_API_KEY = "..." (SET - points to "preferences" bucket)
 
 # Custom domain (optional - set up in Cloudflare dashboard)
-# To use survey.neodate.xyz:
+# To use survey.heaven.example:
 # 1. Go to Workers & Pages > survey > Settings > Domains & Routes
-# 2. Add custom domain: survey.neodate.xyz
+# 2. Add custom domain: survey.heaven.example
 # Current URL: https://survey.deletion-backup782.workers.dev

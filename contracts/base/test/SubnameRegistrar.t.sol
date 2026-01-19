@@ -13,7 +13,7 @@ contract SubnameRegistrarTest is Test {
     address alice = address(0x2);
     address bob = address(0x3);
 
-    string constant PARENT_NAME = "neodate";
+    string constant PARENT_NAME = "heaven";
     string constant TLD = "eth";
     uint256 constant PRICE_PER_YEAR = 0.01 ether;
     uint256 constant ONE_YEAR = 365 days;
@@ -48,8 +48,8 @@ contract SubnameRegistrarTest is Test {
         assertEq(registrar.tld(), TLD);
         assertEq(registrar.pricePerYear(), PRICE_PER_YEAR);
         assertEq(registrar.owner(), owner);
-        assertEq(registrar.name(), "neodate.eth Subnames");
-        assertEq(registrar.symbol(), "SLD-neodate");
+        assertEq(registrar.name(), "heaven.eth Subnames");
+        assertEq(registrar.symbol(), "SLD-heaven");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -324,7 +324,7 @@ contract SubnameRegistrarTest is Test {
         vm.prank(alice);
         uint256 tokenId = registrar.register{value: PRICE_PER_YEAR}("alice", ONE_YEAR);
 
-        assertEq(registrar.fullName(tokenId), "alice.neodate.eth");
+        assertEq(registrar.fullName(tokenId), "alice.heaven.eth");
     }
 
     function test_fullName_nonexistent() public {

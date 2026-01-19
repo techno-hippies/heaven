@@ -8,7 +8,7 @@ All non-FHE contracts deployed to Base. Uses Foundry toolchain.
 
 | Contract | Purpose |
 |----------|---------|
-| `SubnameRegistrarV2` | ENS subname NFTs (`.neodate`, `.⭐`, `.🌀`) |
+| `SubnameRegistrarV2` | ENS subname NFTs (`.heaven`, `.⭐`, `.🌀`) |
 | `SurveyRegistry` | Encrypted survey responses (IPFS CIDs) |
 | `ScrobbleLogV1` | Music listening history |
 | `Records` | ENS-compatible record storage |
@@ -21,11 +21,11 @@ All non-FHE contracts deployed to Base. Uses Foundry toolchain.
 
 ## What This Does (Simple Version)
 
-Users pick a username like `alex.neodate` or `luna.⭐`. This contract:
+Users pick a username like `alex.heaven` or `luna.⭐`. This contract:
 
-1. **Mints an NFT** for the name (you own `alex.neodate` as an ERC-721 token)
+1. **Mints an NFT** for the name (you own `alex.heaven` as an ERC-721 token)
 2. **Stores records** (your wallet address, profile link, etc.)
-3. **Bridges to ENS** so wallets can send to `alex.neodate.hnsbridge.eth`
+3. **Bridges to ENS** so wallets can send to `alex.heaven.hnsbridge.eth`
 
 Think of it like ENS, but for our custom TLDs.
 
@@ -46,11 +46,11 @@ Think of it like ENS, but for our custom TLDs.
 
 | TLD | Example | Price | Who It's For |
 |-----|---------|-------|--------------|
-| `.neodate` | `alex.neodate` | Free | Everyone (default) |
+| `.heaven` | `alex.heaven` | Free | Everyone (default) |
 | `.⭐` | `luna.⭐` | $12/year | Premium vanity |
 | `.🌀` | `cosmic.🌀` | $12/year | Premium vanity |
 
-Each TLD is a separate namespace. `alex.neodate` and `alex.⭐` are different people.
+Each TLD is a separate namespace. `alex.heaven` and `alex.⭐` are different people.
 
 ---
 
@@ -61,9 +61,9 @@ Each TLD is a separate namespace. `alex.neodate` and `alex.⭐` are different pe
 ```
 1. User picks "alex" on the app
 2. App calls: registrar.register("alex", 1 year)
-3. User pays (free for .neodate, ETH for paid TLDs)
+3. User pays (free for .heaven, ETH for paid TLDs)
 4. Contract mints NFT #42 to user
-5. User now owns alex.neodate for 1 year
+5. User now owns alex.heaven for 1 year
 ```
 
 ### What Gets Blocked
@@ -90,7 +90,7 @@ Each TLD is a separate namespace. `alex.neodate` and `alex.⭐` are different pe
 
 We block certain names so they can't be grabbed:
 
-- **Brand**: `neodate`, `hnsbridge`, `admin`, `support`, `official`
+- **Brand**: `heaven`, `hnsbridge`, `admin`, `support`, `official`
 - **Premium**: `king`, `queen`, `alpha`, `god`, `love`, `crypto`, `bitcoin`
 - **Profanity**: Common curse words and slurs
 - **Tech**: `google`, `meta`, `discord` (impersonation risk)
@@ -117,7 +117,7 @@ So `a.⭐` costs $1,000/yr, but `alex.⭐` costs $10/yr.
 
 ## Contract Settings
 
-### Free Tier (`.neodate`)
+### Free Tier (`.heaven`)
 
 ```
 pricePerYear = 0
@@ -156,7 +156,7 @@ renew(tokenId, 365 days)
 available("alex") → true/false
 
 // Get your full name
-fullName(tokenId) → "alex.neodate.hnsbridge.eth"
+fullName(tokenId) → "alex.heaven.hnsbridge.eth"
 ```
 
 ### For Owner (Admin)
@@ -185,14 +185,14 @@ withdraw()
 
 ```bash
 # 1. Deploy (registrations are CLOSED by default)
-PARENT_NAME=neodate TLD=hnsbridge.eth PRICE_PER_YEAR=0 \
+PARENT_NAME=heaven TLD=hnsbridge.eth PRICE_PER_YEAR=0 \
   forge script script/DeployV2.s.sol --rpc-url $RPC --broadcast
 
 # 2. Set reserved words (~350 premium/profanity)
 REGISTRAR=0x... forge script script/SetReserved.s.sol --rpc-url $RPC --broadcast
 
 # 3. Set ENS resolver (via ENS app or contract call)
-# Point neodate.hnsbridge.eth resolver to our Resolver contract
+# Point heaven.hnsbridge.eth resolver to our Resolver contract
 
 # 4. Open registrations
 cast send $REGISTRAR "setRegistrationsOpen(bool)" true --private-key $PK
@@ -247,7 +247,7 @@ contracts/base/
 
 ## Example Scenarios
 
-### Scenario 1: User registers `cosmic.neodate`
+### Scenario 1: User registers `cosmic.heaven`
 
 ```
 1. User calls register("cosmic", 365 days)
@@ -260,10 +260,10 @@ contracts/base/
 3. Price = 0 (free tier)
 4. Mints NFT #1 to user
 5. Sets expiry to now + 365 days
-6. User owns cosmic.neodate.hnsbridge.eth
+6. User owns cosmic.heaven.hnsbridge.eth
 ```
 
-### Scenario 2: User tries to register `king.neodate`
+### Scenario 2: User tries to register `king.heaven`
 
 ```
 1. User calls register("king", 365 days)
@@ -286,7 +286,7 @@ contracts/base/
 ### Scenario 4: Name expires
 
 ```
-1. alex.neodate expires on Jan 1
+1. alex.heaven expires on Jan 1
 2. Jan 1 - Mar 31: Grace period (owner can still renew)
 3. Apr 1+: Anyone can register "alex" again
 4. Old records are cleared, old NFT is burned
@@ -409,7 +409,7 @@ So MetaMask can send to `alex.star.hnsbridge.eth` and it works.
 PRIVATE_KEY=0x...           # Deployer wallet
 SEPOLIA_RPC_URL=...         # Testnet RPC
 MAINNET_RPC_URL=...         # Mainnet RPC
-PARENT_NAME=neodate         # or "star" or "heart"
+PARENT_NAME=heaven         # or "star" or "heart"
 TLD=hnsbridge.eth           # Always this for multi-TLD
 PRICE_PER_YEAR=0            # In wei (0 for free tier)
 OWNER=0x...                 # Contract owner address

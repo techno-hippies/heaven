@@ -12,7 +12,7 @@ interface IRecords {
 
 /// @title Resolver
 /// @notice L1-native ENS resolver for subnames
-/// @dev Set as resolver for your parent ENS name (e.g., neodate.eth)
+/// @dev Set as resolver for your parent ENS name (e.g., heaven.eth)
 ///      Resolves subnames by reading directly from Records contract
 contract Resolver is Ownable {
     /*//////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ contract Resolver is Ownable {
     /// @notice Records contract address
     IRecords public records;
 
-    /// @notice Parent name (e.g., "neodate")
+    /// @notice Parent name (e.g., "heaven")
     string public parentName;
 
     /// @notice ETH coinType (per SLIP-44)
@@ -58,7 +58,7 @@ contract Resolver is Ownable {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Resolve ETH address for a name
-    /// @param node The namehash of the full name (e.g., namehash("jordan.neodate.eth"))
+    /// @param node The namehash of the full name (e.g., namehash("jordan.heaven.eth"))
     function addr(bytes32 node) external view returns (address) {
         return records.addr(node);
     }
@@ -89,7 +89,7 @@ contract Resolver is Ownable {
 
     /// @notice Resolve arbitrary calls via ENSIP-10 wildcard
     /// @dev Called by ENS universal resolver for wildcard subdomains
-    /// @param name DNS-encoded name (e.g., "\x06jordan\x07neodate\x03eth\x00")
+    /// @param name DNS-encoded name (e.g., "\x06jordan\x07heaven\x03eth\x00")
     /// @param data ABI-encoded resolver call (e.g., addr(bytes32), text(bytes32,string))
     function resolve(
         bytes calldata name,
@@ -157,7 +157,7 @@ contract Resolver is Ownable {
 
     /// @notice Compute namehash from DNS-encoded name
     /// @dev DNS format: length-prefixed labels, null terminated
-    ///      Example: "\x06jordan\x07neodate\x03eth\x00"
+    ///      Example: "\x06jordan\x07heaven\x03eth\x00"
     function _namehashFromDns(bytes calldata name) internal pure returns (bytes32) {
         bytes32 node = bytes32(0);
         uint256 idx = 0;

@@ -7,7 +7,7 @@ import {RecordsV2} from "../src/RecordsV2.sol";
 
 contract DeployV3Script is Script {
     // Canonical emoji forms (without VS16)
-    string constant TLD_NEODATE = "neodate";
+    string constant TLD_HEAVEN = "heaven";
     string constant TLD_STAR = unicode"⭐";
     string constant TLD_SPIRAL = unicode"🌀";
 
@@ -25,7 +25,7 @@ contract DeployV3Script is Script {
 
     // Reserved labels (brand protection)
     string[] internal defaultReserved = [
-        "neodate", "hnsbridge", "handshake", "hns",
+        "heaven", "hnsbridge", "handshake", "hns",
         "admin", "support", "official", "team", "staff",
         "root", "system", "security"
     ];
@@ -35,7 +35,7 @@ contract DeployV3Script is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         // Compute parentNodes for each TLD
-        bytes32 nodeNeodate = _namehash(TLD_NEODATE, ROOT_TLD);
+        bytes32 nodeHeaven = _namehash(TLD_HEAVEN, ROOT_TLD);
         bytes32 nodeStar = _namehash(TLD_STAR, ROOT_TLD);
         bytes32 nodeSpiral = _namehash(TLD_SPIRAL, ROOT_TLD);
 
@@ -46,8 +46,8 @@ contract DeployV3Script is Script {
         console2.log("Owner:", owner);
         console2.log("");
         console2.log("TLD Configurations:");
-        console2.log("  neodate.hnsbridge.eth (OFFCHAIN, CCIP)");
-        console2.log("    parentNode:", vm.toString(nodeNeodate));
+        console2.log("  heaven.hnsbridge.eth (OFFCHAIN, CCIP)");
+        console2.log("    parentNode:", vm.toString(nodeHeaven));
         console2.log(unicode"  ⭐.hnsbridge.eth (PAID, length pricing)");
         console2.log("    parentNode:", vm.toString(nodeStar));
         console2.log(unicode"  🌀.hnsbridge.eth (PAID, length pricing)");
@@ -118,7 +118,7 @@ contract DeployV3Script is Script {
         console2.log("  RecordsV2:", address(records));
         console2.log("");
         console2.log("TLD Parent Nodes:");
-        console2.log("  NEODATE (offchain resolver):", vm.toString(nodeNeodate));
+        console2.log("  HEAVEN (offchain resolver):", vm.toString(nodeHeaven));
         console2.log("  STAR (paid):", vm.toString(nodeStar));
         console2.log("  SPIRAL (paid):", vm.toString(nodeSpiral));
         console2.log("");
@@ -130,8 +130,8 @@ contract DeployV3Script is Script {
         console2.log(string.concat("VITE_TLD_NODE_STAR=", vm.toString(nodeStar)));
         console2.log(string.concat("VITE_TLD_NODE_SPIRAL=", vm.toString(nodeSpiral)));
         console2.log("");
-        console2.log("Offchain (.neodate) setup reminder:");
-        console2.log("  Set ENS resolver for neodate.hnsbridge.eth to your OffchainResolver");
+        console2.log("Offchain (.heaven) setup reminder:");
+        console2.log("  Set ENS resolver for heaven.hnsbridge.eth to your OffchainResolver");
         console2.log("  (OffchainResolver should support ENSIP-10 + CCIP-Read)");
     }
 

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "neodate-v2",
+      "name": "heaven-v2",
       "dependencies": {
         "@corvu/drawer": "^0.2.4",
         "@fontsource/geist": "^5.2.8",

@@ -9,7 +9,7 @@ import {Resolver} from "../src/Resolver.sol";
 contract DeployScript is Script {
     function run() external {
         // Configuration
-        string memory parentName = vm.envOr("PARENT_NAME", string("neodate"));
+        string memory parentName = vm.envOr("PARENT_NAME", string("heaven"));
         string memory tld = vm.envOr("TLD", string("eth"));
         uint256 pricePerYear = vm.envOr("PRICE_PER_YEAR", uint256(0.001 ether));
         address owner = vm.envOr("OWNER", msg.sender);

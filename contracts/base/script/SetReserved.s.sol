@@ -11,7 +11,7 @@ contract SetReservedScript is Script {
 
     string[] internal batch1 = [
         // Brand / System
-        "neodate", "hnsbridge", "handshake", "hns", "official", "team", "admin",
+        "heaven", "hnsbridge", "handshake", "hns", "official", "team", "admin",
         "support", "help", "staff", "security", "owner", "root", "registry",
         "registrar", "resolver", "records", "docs", "api", "status", "legal",
         "terms", "privacy", "abuse", "report", "verify", "verified", "billing",

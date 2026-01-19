@@ -52,7 +52,7 @@ function deriveSchemaId(name: string, version: number): string {
 }
 
 // Example
-const schemaId = deriveSchemaId("neodate-personality", 1);
+const schemaId = deriveSchemaId("heaven-personality", 1);
 // → 0x7a3f8b2c...
 ```
 
@@ -69,7 +69,7 @@ Pinned to IPFS. Contains public tier inline, references encrypted tier envelopes
 ```typescript
 interface SurveyResponse {
   // Schema reference (both forms required)
-  schemaId: string;           // Human-readable: "neodate-personality"
+  schemaId: string;           // Human-readable: "heaven-personality"
   schemaVersion: number;      // 1
   schemaIdBytes32: string;    // "0x7a3f..." - must match keccak256(utf8("schemaId:schemaVersion"))
 
@@ -131,7 +131,7 @@ interface EncryptedTierContent {
 
 ```typescript
 interface SurveySchema {
-  id: string;                    // "neodate-personality"
+  id: string;                    // "heaven-personality"
   version: number;               // 1
   schemaIdBytes32: string;       // "0x7a3f..." (derived, for verification)
   name: string;                  // "Heaven Personality Survey"
@@ -349,7 +349,7 @@ const matchOnlyCid = await uploadToFilebase(
 
 ```typescript
 // Gateway URL - use your own Filebase gateway for reliability
-const IPFS_GATEWAY = 'https://ipfs.neodate.xyz/ipfs';
+const IPFS_GATEWAY = 'https://ipfs.heaven.example/ipfs';
 
 // 1. Fetch the envelope
 const envelopeResponse = await fetch(`${IPFS_GATEWAY}/${survey.matchOnly.cid}`);
@@ -544,7 +544,7 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 // 1. Derive schema ID (both forms)
-const schemaName = 'neodate-personality';
+const schemaName = 'heaven-personality';
 const schemaVersion = 1;
 const schemaIdBytes32 = keccak256(toUtf8Bytes(`${schemaName}:${schemaVersion}`));
 
@@ -638,7 +638,7 @@ When indexing `SurveyRegistered` events, validate:
 
 ```typescript
 // Gateway URL - use your own Filebase gateway for reliability
-const IPFS_GATEWAY = 'https://ipfs.neodate.xyz/ipfs';
+const IPFS_GATEWAY = 'https://ipfs.heaven.example/ipfs';
 
 async function indexSurvey(wallet: string, schemaId: string, responseCid: string, encryptionMode: number) {
   // 1. Fetch and parse survey response
@@ -729,7 +729,7 @@ After FHE match confirmation via Dating.sol:
 
 ```typescript
 // Gateway URL - use your own Filebase gateway for reliability
-const IPFS_GATEWAY = 'https://ipfs.neodate.xyz/ipfs';
+const IPFS_GATEWAY = 'https://ipfs.heaven.example/ipfs';
 
 // 1. Fetch matched user's survey
 const [responseCid] = await registry.getSurvey(matchedUser, schemaId);

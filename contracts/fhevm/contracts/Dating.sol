@@ -144,7 +144,7 @@ contract DatingV3 is ZamaEthereumConfig {
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 EIP712_DOMAIN_TYPEHASH,
-                keccak256("NeoDate"),
+                keccak256("Heaven"),
                 keccak256("3"),
                 block.chainid,
                 address(this)

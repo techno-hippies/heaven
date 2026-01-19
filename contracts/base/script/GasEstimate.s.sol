@@ -8,7 +8,7 @@ import "../src/Records.sol";
 contract GasEstimate is Script {
     function run() external {
         // Deploy contracts
-        SubnameRegistrar registrar = new SubnameRegistrar("neodate", "eth", 0.001 ether, address(this));
+        SubnameRegistrar registrar = new SubnameRegistrar("heaven", "eth", 0.001 ether, address(this));
         Records records = new Records(address(registrar), address(this));
         registrar.setRecords(address(records));
 

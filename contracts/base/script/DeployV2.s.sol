@@ -10,14 +10,14 @@ contract DeployV2Script is Script {
     // Minimal default reserved (brand protection only)
     // Run SetReserved.s.sol after deployment for full list (~350 labels)
     string[] internal defaultReserved = [
-        "neodate", "hnsbridge", "handshake", "hns",
+        "heaven", "hnsbridge", "handshake", "hns",
         "admin", "support", "official", "team", "staff",
         "root", "system", "security"
     ];
 
     function run() external {
         // Configuration from env
-        string memory parentName = vm.envOr("PARENT_NAME", string("neodate"));
+        string memory parentName = vm.envOr("PARENT_NAME", string("heaven"));
         string memory tld = vm.envOr("TLD", string("hnsbridge.eth"));
         uint256 pricePerYear = vm.envOr("PRICE_PER_YEAR", uint256(0)); // 0 = free
         uint8 minLabelLength = uint8(vm.envOr("MIN_LABEL_LENGTH", uint256(4)));

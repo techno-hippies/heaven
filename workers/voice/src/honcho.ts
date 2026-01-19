@@ -8,7 +8,7 @@
 import type { Env } from "./env";
 
 const HONCHO_BASE_URL = "https://api.honcho.dev";
-const WORKSPACE_ID = "NEODATE1";
+const WORKSPACE_ID = "HEAVEN1";
 
 /**
  * Pseudonymize wallet address using HMAC-SHA256

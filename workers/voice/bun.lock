@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "neodate-voice",
+      "name": "heaven-voice",
       "dependencies": {
         "agora-token": "^2.0.3",
         "ethers": "^6.13.5",

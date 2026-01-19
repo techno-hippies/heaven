@@ -259,8 +259,8 @@ Since most users don't have email, we use **platform account control** as the id
 Best for: dateme.directory (has contact info), manifold.love (can DM after like)
 
 ```
-DM content: "Claim your Heaven profile: neodate.app/c/a8f3...
-            If links don't work, go to neodate.app/claim and enter: NEO-7X9K2M"
+DM content: "Claim your Heaven profile: heaven.example/c/a8f3...
+            If links don't work, go to heaven.example/claim and enter: NEO-7X9K2M"
 ```
 
 - Generate `claim_token` (128-bit random)
@@ -904,10 +904,10 @@ Manifold.love: 1 DM/day after liking once. Cuties: unclear. Dateme: email/contac
 **DM Template:**
 ```
 Hey! Someone created a profile for you on Heaven based on your
-public dating doc. You can claim it here: neodate.app/c/[token]
+public dating doc. You can claim it here: heaven.example/c/[token]
 
 If that link doesn't work:
-1. Go to neodate.app/claim
+1. Go to heaven.example/claim
 2. Enter code: NEO-[code]
 
 Or add "NEO-[code]" to your [platform] bio and we'll verify automatically.
@@ -1312,7 +1312,7 @@ Site must verify DNS VPN is active before allowing directory registration or lik
 async function checkVpnStatus(): Promise<boolean> {
   // Option 1: Query our DNS server for a canary domain
   // Option 2: Call API endpoint that checks if request comes from VPN subnet
-  const response = await fetch('https://api.neodate.app/vpn-status')
+  const response = await fetch('https://api.heaven.example/vpn-status')
   return response.json().connected
 }
 ```
@@ -1331,7 +1331,7 @@ async function checkVpnStatus(): Promise<boolean> {
 
 ### Name Registry (contracts/name-registry/)
 
-ENS subname registry for `*.neodate.eth` identities.
+ENS subname registry for `*.heaven.eth` identities.
 
 **Sepolia Testnet:**
 
@@ -1470,7 +1470,7 @@ See: https://developer.spotify.com/documentation/web-api/concepts/rate-limits
 **Start with gateway UX**, not native resolution:
 
 ```
-https://hns.to/alice.neodate  → works in normal browsers
+https://hns.to/alice.heaven  → works in normal browsers
 ```
 
 See: https://kb.porkbun.com/article/211-what-is-a-handshake-tld-and-how-to-resolve-them

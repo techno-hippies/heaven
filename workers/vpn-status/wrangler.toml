@@ -8,11 +8,11 @@ ENVIRONMENT = "production"
 # D1 database for storing DNS canary tokens
 [[d1_databases]]
 binding = "DB"
-database_name = "neodate-vpn"
-database_id = "" # Set after: wrangler d1 create neodate-vpn
+database_name = "heaven-vpn"
+database_id = "" # Set after: wrangler d1 create heaven-vpn
 
 # Routes for wildcard subdomain DNS canary
 # routes = [
-#   { pattern = "vpncheck.neodate.app/*", zone_name = "neodate.app" },
-#   { pattern = "*.vpncheck.neodate.app/*", zone_name = "neodate.app" }
+#   { pattern = "vpncheck.heaven.example/*", zone_name = "heaven.example" },
+#   { pattern = "*.vpncheck.heaven.example/*", zone_name = "heaven.example" }
 # ]

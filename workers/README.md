@@ -11,7 +11,7 @@ DNS-based canary check for detecting VPN connection status. Works with IPFS-host
 **How it works:**
 
 1. Frontend generates random UUID token
-2. Frontend loads `https://<token>.vpncheck.neodate.app/pixel.png` (triggers DNS lookup)
+2. Frontend loads `https://<token>.vpncheck.heaven.example/pixel.png` (triggers DNS lookup)
 3. If user is on Heaven VPN, our DNS resolver handles the query and the worker logs `{token, seenAt}` to D1
 4. Frontend polls `GET /vpn-status?token=<token>`
 5. Worker returns `{connected: true/false}`
@@ -20,7 +20,7 @@ DNS-based canary check for detecting VPN connection status. Works with IPFS-host
 
 | Path | Method | Description |
 |------|--------|-------------|
-| `/<token>.vpncheck.neodate.app/pixel.png` | GET | DNS canary pixel (logs token) |
+| `/<token>.vpncheck.heaven.example/pixel.png` | GET | DNS canary pixel (logs token) |
 | `/vpn-status?token=<uuid>` | GET | Check if token was seen |
 | `/health` | GET | Health check |
 
@@ -37,7 +37,7 @@ bun run deploy           # Deploy to Cloudflare
 
 **DNS Configuration:**
 
-Configure wildcard DNS for `*.vpncheck.neodate.app` pointing to this worker.
+Configure wildcard DNS for `*.vpncheck.heaven.example` pointing to this worker.
 
 ## Frontend Usage
 
@@ -47,14 +47,14 @@ async function checkVpnStatus(): Promise<boolean> {
 
   // Trigger DNS lookup via unique subdomain
   const img = new Image();
-  img.src = `https://${token}.vpncheck.neodate.app/pixel.png?ts=${Date.now()}`;
+  img.src = `https://${token}.vpncheck.heaven.example/pixel.png?ts=${Date.now()}`;
 
   // Wait briefly for DNS + HTTP round trip
   await new Promise((r) => setTimeout(r, 2000));
 
   // Check status
   const res = await fetch(
-    `https://vpncheck.neodate.app/vpn-status?token=${token}`,
+    `https://vpncheck.heaven.example/vpn-status?token=${token}`,
     { cache: "no-store" }
   );
   const { connected } = await res.json();

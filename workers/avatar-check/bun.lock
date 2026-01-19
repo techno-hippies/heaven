@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "neodate-avatar-check",
+      "name": "heaven-avatar-check",
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250109.0",
         "typescript": "^5.7.3",
