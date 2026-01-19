@@ -1,6 +1,6 @@
-# Neodate Cloudflare Workers
+# Heaven Cloudflare Workers
 
-Serverless endpoints for Neodate infrastructure.
+Serverless endpoints for Heaven infrastructure.
 
 ## Workers
 
@@ -12,7 +12,7 @@ DNS-based canary check for detecting VPN connection status. Works with IPFS-host
 
 1. Frontend generates random UUID token
 2. Frontend loads `https://<token>.vpncheck.neodate.app/pixel.png` (triggers DNS lookup)
-3. If user is on Neodate VPN, our DNS resolver handles the query and the worker logs `{token, seenAt}` to D1
+3. If user is on Heaven VPN, our DNS resolver handles the query and the worker logs `{token, seenAt}` to D1
 4. Frontend polls `GET /vpn-status?token=<token>`
 5. Worker returns `{connected: true/false}`
 

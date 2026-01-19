@@ -49,6 +49,12 @@ const ACTIONS: Record<string, ActionDef> = {
     displayName: 'Survey Registry Sponsor v1',
     keys: [],
   },
+  scrobble: {
+    name: 'scrobble',
+    path: 'actions/scrobble-batch-sign-v1.js',
+    displayName: 'Scrobble Batch Sign v1',
+    keys: [], // No encrypted keys needed - only signs
+  },
 };
 
 // Parse CLI args

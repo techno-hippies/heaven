@@ -73,7 +73,7 @@ async function searchPhoton(
   const response = await fetch(url.toString(), {
     signal,
     headers: {
-      'User-Agent': 'Neodate/1.0 (https://neodate.love)',
+      'User-Agent': 'Heaven/1.0',
     },
   })
 

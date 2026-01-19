@@ -47,21 +47,13 @@ const maxPlays = Math.max(...mockData.topArtists.map(a => a.playCount))
 
 export const MusicPage: Component = () => {
   return (
-    <div class="min-h-screen">
-      {/* Header */}
-      <header class="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <A href="/profile">
-            <IconButton icon="arrow-left" label="Back to profile" variant="ghost" size="sm" />
-          </A>
-          <div class="flex-1">
-            <h1 class="font-semibold text-foreground">Music</h1>
-            <p class="text-muted-foreground">{mockData.user.domain}</p>
-          </div>
-        </div>
-      </header>
+    <div class="min-h-screen p-4 md:p-8">
+      <div class="max-w-2xl mx-auto space-y-4">
+        {/* Back button */}
+        <A href="/profile" class="inline-block mb-2">
+          <IconButton icon="arrow-left" label="Back to profile" variant="ghost" size="sm" />
+        </A>
 
-      <div class="max-w-2xl mx-auto p-4 space-y-6">
         {/* Now Playing */}
         <Show when={mockData.nowPlaying}>
           <section class="bg-card border border-border rounded-2xl p-4">

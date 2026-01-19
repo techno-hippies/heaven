@@ -1,7 +1,7 @@
 /**
  * VPN Status Check Worker
  *
- * DNS-based canary check for detecting if user is connected to Neodate VPN.
+ * DNS-based canary check for detecting if user is connected to Heaven VPN.
  *
  * Flow:
  * 1. Frontend generates random token, loads `https://<token>.vpncheck.neodate.app/pixel.png`

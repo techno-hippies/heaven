@@ -1,4 +1,4 @@
-# Neodate V2 - Minimal Setup
+# Heaven V2 - Minimal Setup
 
 Minimal SolidJS + Tailwind CSS v4 + Storybook setup with core UI building blocks.
 

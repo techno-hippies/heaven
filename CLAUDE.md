@@ -1,4 +1,4 @@
-# Neodate - Claude Code Instructions
+# Heaven - Claude Code Instructions
 
 ## Package Manager
 
@@ -24,7 +24,7 @@ Use **bun** for all package operations:
 ## Project Structure
 
 ```
-neodate/
+heaven/
 ├── app/                    # SolidJS web app
 │   └── src/
 │       ├── components/ui/  # Base components

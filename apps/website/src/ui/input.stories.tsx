@@ -74,7 +74,7 @@ export const CopyableCode: StoryObj<typeof InputWithCopy> = {
 export const CopyableUrl: StoryObj<typeof InputWithCopy> = {
   render: () => (
     <div class="w-96">
-      <InputWithCopy value="https://neodate.app/u/sakura" />
+      <InputWithCopy value="https://heaven.app/u/sakura" />
     </div>
   ),
 }
@@ -93,7 +93,7 @@ export const SuffixDefault: StoryObj<typeof InputWithSuffix> = {
     <div class="w-80">
       <InputWithSuffix
         placeholder="yourname"
-        suffix=".neodate"
+        suffix=".heaven"
       />
     </div>
   ),
@@ -104,7 +104,7 @@ export const SuffixValid: StoryObj<typeof InputWithSuffix> = {
     <div class="w-80">
       <InputWithSuffix
         value="aurora"
-        suffix=".neodate"
+        suffix=".heaven"
         state="valid"
       />
     </div>
@@ -116,7 +116,7 @@ export const SuffixInvalid: StoryObj<typeof InputWithSuffix> = {
     <div class="w-80">
       <InputWithSuffix
         value="admin"
-        suffix=".neodate"
+        suffix=".heaven"
         state="invalid"
       />
     </div>

@@ -1,11 +1,16 @@
-import { Router } from '@solidjs/router'
+import { HashRouter } from '@solidjs/router'
+import { AuthDialog } from '@/components/auth'
 import { AuthProvider } from './providers/AuthContext'
+import { Web3Provider } from './providers/Web3Provider'
 import { routes } from './routes'
 
 export const App = () => {
   return (
-    <AuthProvider>
-      <Router>{routes}</Router>
-    </AuthProvider>
+    <Web3Provider>
+      <AuthProvider>
+        <HashRouter>{routes}</HashRouter>
+        <AuthDialog />
+      </AuthProvider>
+    </Web3Provider>
   )
 }

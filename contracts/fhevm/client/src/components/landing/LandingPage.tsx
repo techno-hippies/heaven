@@ -292,7 +292,7 @@ export const LandingPage: Component = () => {
       >
         <div class="max-w-4xl mx-auto px-6 text-center">
           <p class="text-lg font-medium" style={{ color: colors.textMuted }}>
-            Neodate — Dating for people who want more.
+            Heaven — Dating for people who want more.
           </p>
         </div>
       </footer>

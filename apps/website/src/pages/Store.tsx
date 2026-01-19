@@ -72,7 +72,7 @@ export const StorePage: Component = () => {
   return (
     <div class="min-h-screen bg-background">
       <section class="px-6 py-12 md:px-10 lg:px-12">
-        <div class="mx-auto w-full max-w-5xl space-y-10">
+        <div class="mx-auto w-full max-w-2xl space-y-10">
           <header>
             <h1 class="text-3xl font-semibold text-foreground md:text-4xl font-title">
               Store

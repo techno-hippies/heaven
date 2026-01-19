@@ -9,7 +9,7 @@ export const OnboardingPage: Component = () => {
       <div class="text-center">
         <h1 class="text-4xl font-bold mb-4">Onboarding</h1>
         <p class="text-muted-foreground">
-          {params.stepId ? `Step: ${params.stepId}` : 'Get started with Neodate'}
+          {params.stepId ? `Step: ${params.stepId}` : 'Get started with Heaven'}
         </p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-# Neodate
+# Heaven
 
 Privacy-first dating app with DNS-behavioral matching, FHE compatibility, and decentralized identity.
 
@@ -259,7 +259,7 @@ Since most users don't have email, we use **platform account control** as the id
 Best for: dateme.directory (has contact info), manifold.love (can DM after like)
 
 ```
-DM content: "Claim your Neodate profile: neodate.app/c/a8f3...
+DM content: "Claim your Heaven profile: neodate.app/c/a8f3...
             If links don't work, go to neodate.app/claim and enter: NEO-7X9K2M"
 ```
 
@@ -903,7 +903,7 @@ Manifold.love: 1 DM/day after liking once. Cuties: unclear. Dateme: email/contac
 
 **DM Template:**
 ```
-Hey! Someone created a profile for you on Neodate based on your
+Hey! Someone created a profile for you on Heaven based on your
 public dating doc. You can claim it here: neodate.app/c/[token]
 
 If that link doesn't work:

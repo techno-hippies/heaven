@@ -1,4 +1,4 @@
-# Neodate
+# Heaven
 
 Privacy-preserving dating using Zama's Fully Homomorphic Encryption (fhEVM). Part of the Higher Power ecosystem.
 

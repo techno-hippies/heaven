@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * Deploy all Neodate contracts to Sepolia (Zama fhEVM via coprocessor)
+ * Deploy all Heaven contracts to Sepolia (Zama fhEVM via coprocessor)
  *
  * Usage:
  *   bun run deploy
@@ -19,7 +19,7 @@ async function main() {
   const chainId = network.config.chainId ?? 11155111;
 
   console.log("=".repeat(60));
-  console.log("Neodate Contract Deployment");
+  console.log("Heaven Contract Deployment");
   console.log("=".repeat(60));
   console.log(`Network: ${network.name} (chainId: ${chainId})`);
   console.log(`Deployer: ${admin}`);

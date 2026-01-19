@@ -46,19 +46,31 @@ export const Textarea: Component<TextareaProps> = (props) => {
 export interface InputWithCopyProps {
   /** The value to display and copy */
   value: string
+  /** Truncate display value (keeps full value for copy). Format: "0x1234...5678" */
+  truncate?: boolean
   /** Additional class names */
   class?: string
 }
 
 /**
+ * Truncate an address/hash to show first 6 and last 4 characters.
+ */
+const truncateAddress = (value: string) => {
+  if (value.length <= 12) return value
+  return `${value.slice(0, 6)}...${value.slice(-4)}`
+}
+
+/**
  * Read-only input field with copy button.
- * Used for displaying codes, URLs, or other copyable values.
+ * Used for displaying codes, URLs, addresses, or other copyable values.
  */
 export const InputWithCopy: Component<InputWithCopyProps> = (props) => {
   const handleCopy = () => {
     navigator.clipboard.writeText(props.value)
     haptic.light()
   }
+
+  const displayValue = () => props.truncate ? truncateAddress(props.value) : props.value
 
   return (
     <div
@@ -67,8 +79,8 @@ export const InputWithCopy: Component<InputWithCopyProps> = (props) => {
         props.class
       )}
     >
-      <span class="flex-1 text-base leading-6 text-foreground truncate">
-        {props.value}
+      <span class="flex-1 text-base leading-6 text-foreground font-mono">
+        {displayValue()}
       </span>
       <IconButton
         icon="copy"
@@ -129,7 +141,7 @@ export const InputStatus: Component<InputStatusProps> = (props) => {
 }
 
 export interface InputWithSuffixProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, 'class'> {
-  /** Suffix text displayed after input (e.g., ".neodate") */
+  /** Suffix text displayed after input (e.g., ".heaven") */
   suffix: string
   /** Validation state */
   state?: 'default' | 'valid' | 'invalid'
@@ -141,7 +153,7 @@ export interface InputWithSuffixProps extends Omit<JSX.InputHTMLAttributes<HTMLI
 
 /**
  * Input field with a fixed suffix.
- * Used for domain/handle inputs like "name.neodate"
+ * Used for domain/handle inputs like "name.heaven"
  */
 export const InputWithSuffix: Component<InputWithSuffixProps> = (props) => {
   const [local, others] = splitProps(props, ['class', 'inputClass', 'suffix', 'state'])

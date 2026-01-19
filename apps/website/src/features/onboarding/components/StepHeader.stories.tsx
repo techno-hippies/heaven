@@ -46,7 +46,7 @@ export const Required: Story = {
 
 export const FirstStep: Story = {
   args: {
-    title: 'Welcome to Neodate',
+    title: 'Welcome to Heaven',
     subtitle: "Let's set up your profile in just a few steps",
     current: 1,
     total: 10,

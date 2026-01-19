@@ -146,8 +146,8 @@ async function moderateImage(apiKey: string, dataUrl: string): Promise<Moderatio
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://neodate.app',
-      'X-Title': 'Neodate',
+      'HTTP-Referer': 'https://heaven.invalid',
+      'X-Title': 'Heaven',
     },
     body: JSON.stringify({
       model: 'qwen/qwen3-vl-32b-instruct',

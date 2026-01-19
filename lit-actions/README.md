@@ -1,4 +1,4 @@
-# Neodate Lit Actions
+# Heaven Lit Actions
 
 Lit Protocol actions for sponsored on-chain writes without a server-held private key.
 

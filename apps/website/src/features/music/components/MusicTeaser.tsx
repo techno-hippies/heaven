@@ -37,7 +37,7 @@ export const MusicTeaser: Component<MusicTeaserProps> = (props) => {
       parts.push(`${formatNumber(props.scrobbles)} scrobbles`)
     }
     if (props.hoursThisWeek) {
-      parts.push(`${props.hoursThisWeek} hrs this week`)
+      parts.push(`${props.hoursThisWeek} hours this week`)
     }
     return parts.join(' · ')
   }
@@ -54,21 +54,23 @@ export const MusicTeaser: Component<MusicTeaserProps> = (props) => {
           props.class
         )}
       >
-        {/* Stats line */}
+        {/* Stats line with chevron */}
         <Show when={statsLine()}>
-          <p class="text-muted-foreground mb-4">{statsLine()}</p>
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-muted-foreground">{statsLine()}</p>
+            <Show when={props.onClick}>
+              <Icon name="caret-right" class="text-lg text-muted-foreground" />
+            </Show>
+          </div>
         </Show>
 
-        {/* Artist list with trailing chevron on last row */}
+        {/* Artist list */}
         <div class="space-y-3">
           <For each={artists()}>
             {(artist, index) => (
               <div class="flex items-center gap-3">
                 <span class="w-5 text-muted-foreground tabular-nums">{index() + 1}.</span>
                 <span class="flex-1 text-lg text-foreground">{artist.name}</span>
-                <Show when={index() === artists().length - 1 && props.onClick}>
-                  <Icon name="caret-right" class="text-lg text-muted-foreground" />
-                </Show>
               </div>
             )}
           </For>

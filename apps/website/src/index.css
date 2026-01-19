@@ -5,10 +5,10 @@
 @import "@fontsource/geist/latin-600.css";
 @import "@fontsource/geist/latin-700.css";
 
-/* Orbit font - for titles only */
+/* Zen Dots font - for titles only */
 @font-face {
-  font-family: 'Orbit';
-  src: url('/fonts/Orbit-Regular.ttf') format('truetype');
+  font-family: 'Zen Dots';
+  src: url('/fonts/ZenDots-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -19,7 +19,7 @@
 
 @theme {
   --font-sans: 'Geist', -apple-system, system-ui, sans-serif;
-  --font-title: 'Orbit', 'Geist', -apple-system, system-ui, sans-serif;
+  --font-title: 'Zen Dots', 'Geist', -apple-system, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
   --font-serif: ui-serif, Georgia, serif;
   --radius: 0.75rem;
@@ -57,7 +57,7 @@
 }
 
 /*
- * Neodate Theme - Light Mode
+ * Heaven Theme - Light Mode
  * Clean, warm off-white with coral/rose accents
  * Modern dating app feel - friendly and approachable
  */
@@ -67,14 +67,14 @@
 
   /* Off-white/cream background - warm and inviting */
   --background: oklch(0.98 0.005 80);
-  --foreground: oklch(0.20 0.02 260);
+  --foreground: oklch(0.35 0 0);
 
   /* Cards - pure white for contrast */
   --card: oklch(1.00 0 0);
-  --card-foreground: oklch(0.20 0.02 260);
+  --card-foreground: oklch(0.35 0 0);
 
   --popover: oklch(1.00 0 0);
-  --popover-foreground: oklch(0.20 0.02 260);
+  --popover-foreground: oklch(0.35 0 0);
 
   /* Primary: Warm coral/rose - friendly, romantic */
   --primary: oklch(0.65 0.18 15);
@@ -82,15 +82,15 @@
 
   /* Secondary: Light warm gray */
   --secondary: oklch(0.94 0.01 80);
-  --secondary-foreground: oklch(0.30 0.02 260);
+  --secondary-foreground: oklch(0.35 0 0);
 
   /* Muted: Soft gray for less emphasis */
   --muted: oklch(0.92 0.005 80);
-  --muted-foreground: oklch(0.50 0.02 260);
+  --muted-foreground: oklch(0.50 0 0);
 
   /* Accent: Soft rose/pink highlight */
   --accent: oklch(0.92 0.04 350);
-  --accent-foreground: oklch(0.55 0.18 350);
+  --accent-foreground: oklch(0.35 0 0);
 
   /* Destructive: Soft red */
   --destructive: oklch(0.55 0.20 25);
@@ -105,7 +105,7 @@
   --chat-user: oklch(0.65 0.18 15);
   --chat-user-foreground: oklch(1.00 0 0);
   --chat-other: oklch(0.94 0.01 80);
-  --chat-other-foreground: oklch(0.20 0.02 260);
+  --chat-other-foreground: oklch(0.35 0 0);
 
   /* Chart colors - warm palette */
   --chart-1: oklch(0.65 0.18 15);
@@ -118,16 +118,16 @@
 
   /* Sidebar - slightly darker cream */
   --sidebar: oklch(0.96 0.008 80);
-  --sidebar-foreground: oklch(0.20 0.02 260);
+  --sidebar-foreground: oklch(0.35 0 0);
   --sidebar-primary: oklch(0.65 0.18 15);
   --sidebar-primary-foreground: oklch(1.00 0 0);
   --sidebar-accent: oklch(0.92 0.02 80);
-  --sidebar-accent-foreground: oklch(0.55 0.18 15);
+  --sidebar-accent-foreground: oklch(0.35 0 0);
   --sidebar-border: oklch(0.90 0.01 80);
   --sidebar-ring: oklch(0.65 0.18 15);
 
   --font-sans: 'Geist', -apple-system, system-ui, sans-serif;
-  --font-title: 'Orbit', 'Geist', -apple-system, system-ui, sans-serif;
+  --font-title: 'Zen Dots', 'Geist', -apple-system, system-ui, sans-serif;
   --font-serif: ui-serif, Georgia, serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
 

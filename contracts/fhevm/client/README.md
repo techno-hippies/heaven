@@ -1,6 +1,6 @@
-# Neodate Client
+# Heaven Client
 
-SolidJS UI and TypeScript helpers for the Neodate FHE dating contracts.
+SolidJS UI and TypeScript helpers for the Heaven FHE dating contracts.
 
 ## Development
 

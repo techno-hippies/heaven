@@ -1,4 +1,4 @@
-# Neodate V3 - Privacy-Preserving Dating with Zama FHE
+# Heaven V3 - Privacy-Preserving Dating with Zama FHE
 
 ## Overview
 

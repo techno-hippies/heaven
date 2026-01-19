@@ -327,7 +327,7 @@ app.post("/agent/:id/stop", async (c) => {
 // TEXT CHAT
 // =============================================================================
 
-const CHAT_SYSTEM_PROMPT = `You are Scarlett, a warm and insightful AI dating coach on Neodate.
+const CHAT_SYSTEM_PROMPT = `You are Scarlett, a warm and insightful AI dating coach on Heaven.
 
 Your role:
 - Help users improve their dating profiles and approach

@@ -1,8 +1,8 @@
-# Neodate Survey System Specification
+# Heaven Survey System Specification
 
 ## Overview
 
-Portable, encrypted dating surveys stored on IPFS with on-chain discovery. Users own their data; Neodate never has custody of encrypted content or keys.
+Portable, encrypted dating surveys stored on IPFS with on-chain discovery. Users own their data; Heaven never has custody of encrypted content or keys.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -134,7 +134,7 @@ interface SurveySchema {
   id: string;                    // "neodate-personality"
   version: number;               // 1
   schemaIdBytes32: string;       // "0x7a3f..." (derived, for verification)
-  name: string;                  // "Neodate Personality Survey"
+  name: string;                  // "Heaven Personality Survey"
   description: string;
 
   questions: Array<{
@@ -230,7 +230,7 @@ x-amz-meta-cid: bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi
 2. **Native app** - No CORS restrictions
 3. **S3 presigned URL** - Generate presigned URL server-side, but this introduces server involvement
 
-For Neodate, recommend **browser extension flow** to maintain no-custody model.
+For Heaven, recommend **browser extension flow** to maintain no-custody model.
 
 ---
 
@@ -772,7 +772,7 @@ showSharedValues(matchOnlyResponses.responses);
 
 ## Security Considerations
 
-1. **No custody**: Neodate never stores raw survey data or encryption keys
+1. **No custody**: Heaven never stores raw survey data or encryption keys
 2. **User-controlled pinning**: User's Filebase API key, user's storage
 3. **On-chain authorship**: Registration transaction proves ownership
 4. **Lit access control**: `areMatched(a, b)` check is on-chain, verifiable
