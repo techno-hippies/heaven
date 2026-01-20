@@ -4,7 +4,7 @@
   <img src="logo.png" alt="Heaven Logo" width="200">
 </p>
 
-Privacy-first dating with encrypted compatibility matching, decentralized identity, and DNS-based discovery.
+**Matches made in Heaven.** Blind dates powered by music scrobbling, browsing history, and private surveys. Built on Ethereum, portable across web3.
 
 ## Components
 
