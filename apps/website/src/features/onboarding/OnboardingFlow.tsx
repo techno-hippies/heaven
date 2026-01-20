@@ -6,6 +6,7 @@ import { BackButton } from './components/BackButton'
 import { Button } from '@/ui/button'
 import type { StepData } from './types'
 import { stepRegistry } from './steps'
+import { getPhaseForStep, isLastStepInPhase, type OnboardingPhase } from './config'
 
 export interface OnboardingFlowProps {
   /** Initial step ID */
@@ -14,6 +15,8 @@ export interface OnboardingFlowProps {
   stepIds: string[]
   /** Called when flow is completed */
   onComplete?: (data: StepData) => void
+  /** Called when a phase is completed (fires before advancing to next phase) */
+  onPhaseComplete?: (phase: OnboardingPhase, data: StepData) => void | Promise<void>
   /** Called when user cancels */
   onCancel?: () => void
 }
@@ -48,6 +51,18 @@ export const OnboardingFlow: Component<OnboardingFlowProps> = (props) => {
   }
 
   const handleNext = () => {
+    const stepId = currentStepId()
+    const currentPhase = getPhaseForStep(stepId)
+
+    // Check if we're at the last step of a phase
+    if (currentPhase && isLastStepInPhase(stepId) && props.onPhaseComplete) {
+      // Fire phase callback (don't await - optimistic/non-blocking)
+      // Wrap in Promise.resolve to handle both sync and async callbacks safely
+      void Promise.resolve(props.onPhaseComplete(currentPhase, data())).catch((err) => {
+        console.error(`[OnboardingFlow] Phase ${currentPhase} callback error:`, err)
+      })
+    }
+
     if (currentIndex() < totalSteps() - 1) {
       setCurrentIndex(currentIndex() + 1)
     } else if (props.onComplete) {

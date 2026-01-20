@@ -6,6 +6,27 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Haptic feedback utilities (for mobile/Tauri)
+ */
+export const haptic = {
+  light: () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10)
+    }
+  },
+  medium: () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(20)
+    }
+  },
+  heavy: () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(30)
+    }
+  },
+}
+
+/**
  * Format duration in seconds to mm:ss
  */
 export function formatDuration(seconds: number): string {

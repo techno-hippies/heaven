@@ -14,12 +14,21 @@
   },
   "dependencies": {
     "@corvu/drawer": "^0.2.4",
+    "@fontsource/geist": "5.2.8",
     "@kobalte/core": "^0.13.9",
+    "@lit-protocol/auth": "8.2.2",
+    "@lit-protocol/lit-client": "8.3.0",
+    "@lit-protocol/networks": "8.4.0",
+    "@reown/appkit": "1.8.16",
+    "@reown/appkit-adapter-wagmi": "1.8.16",
+    "@wagmi/connectors": "7.1.2",
+    "@wagmi/core": "3.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "phosphor-icons-solid": "^1.0.0",
     "solid-js": "^1.9.3",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "viem": "2.44.4"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.12",

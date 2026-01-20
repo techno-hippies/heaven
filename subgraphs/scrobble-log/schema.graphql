@@ -1,0 +1,51 @@
+# User entity - aggregates stats across all batches
+type User @entity(immutable: false) {
+  id: Bytes! # user address
+  totalBatches: Int!
+  totalTracks: Int!
+  firstBatchAt: BigInt
+  lastBatchAt: BigInt
+  batches: [ScrobbleBatch!]! @derivedFrom(field: "user")
+}
+
+# Scrobble batch committed on-chain
+type ScrobbleBatch @entity(immutable: false) {
+  id: ID! # txHash-logIndex
+  user: User!
+  cid: String! # IPFS CID as string (decoded from bytes)
+  cidHash: Bytes! # keccak256(cid)
+  startTs: BigInt!
+  endTs: BigInt!
+  count: Int!
+  nonce: BigInt!
+
+  # IPFS content (populated by file data source)
+  ipfsLoaded: Boolean!
+  tracks: [Track!]! @derivedFrom(field: "batch")
+
+  # Block metadata
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Individual track from IPFS batch content
+type Track @entity(immutable: true) {
+  id: ID! # batchId-index
+  batch: ScrobbleBatch!
+  index: Int! # position in batch
+  artist: String!
+  title: String!
+  album: String
+  duration: Int
+  playedAt: BigInt!
+}
+
+# Global stats
+type GlobalStats @entity(immutable: false) {
+  id: ID! # "global"
+  totalBatches: Int!
+  totalTracks: Int!
+  totalUsers: Int!
+  lastBatchAt: BigInt
+}

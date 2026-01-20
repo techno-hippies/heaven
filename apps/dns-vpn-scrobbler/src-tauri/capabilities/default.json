@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schemas.tauri.app/capabilities/2.1.0",
+  "identifier": "default",
+  "description": "Default capabilities for Scrobbler",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:event:allow-listen",
+    "core:event:allow-emit",
+    "shell:allow-open"
+  ]
+}

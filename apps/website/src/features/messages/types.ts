@@ -1,3 +1,5 @@
+import type { Dm } from '@/lib/xmtp'
+
 export type VoiceState = 'idle' | 'connecting' | 'connected' | 'error'
 
 export type DisappearingDuration = 'off' | '24h' | '7d' | '90d'
@@ -23,4 +25,8 @@ export interface Chat {
   isPinned?: boolean
   isAIChat?: boolean
   disappearingSetting?: DisappearingDuration
+  /** Peer address for XMTP chats */
+  peerAddress?: string
+  /** XMTP conversation reference */
+  xmtpConversation?: Dm
 }

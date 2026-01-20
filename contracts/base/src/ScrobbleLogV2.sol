@@ -10,22 +10,29 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 /// @dev Relay submits batches on behalf of users. CID points to NDJSON on IPFS.
 ///      User must sign the batch params; relay cannot forge batches.
 ///      Replay protection (nonce monotonicity) must be enforced offchain by the relay/indexer.
+///
+///      CID encoding: The `cid` field is the UTF-8 encoded string of the IPFS CID (e.g., "Qm...").
+///      This is NOT raw multiformat bytes, just the human-readable CID string as bytes.
 contract ScrobbleLogV2 is Ownable {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
     /// @notice Emitted when a batch of scrobbles is committed
     /// @param user The user's PKP address
-    /// @param cid IPFS CID as raw bytes (variable length)
+    /// @param cid IPFS CID as UTF-8 encoded string bytes (e.g., "Qm..." or "bafy...")
+    /// @param cidHash keccak256(cid) for efficient lookups
     /// @param startTs Timestamp of first scrobble in batch (unix seconds)
     /// @param endTs Timestamp of last scrobble in batch (unix seconds)
     /// @param count Number of scrobbles in batch
+    /// @param nonce Replay protection nonce (should be monotonically increasing per user)
     event BatchCommitted(
         address indexed user,
         bytes cid,
+        bytes32 cidHash,
         uint40 startTs,
         uint40 endTs,
-        uint32 count
+        uint32 count,
+        uint64 nonce
     );
 
     /// @notice Emitted when a batch is rejected in multi-batch submission
@@ -96,7 +103,7 @@ contract ScrobbleLogV2 is Ownable {
         address signer = ECDSA.recover(digest, userSig);
         if (signer != user) revert InvalidSignature();
 
-        emit BatchCommitted(user, cid, startTs, endTs, count);
+        emit BatchCommitted(user, cid, cidHash, startTs, endTs, count, nonce);
     }
 
     /// @notice Commit multiple batches in one tx (gas optimization for relay)
@@ -149,7 +156,7 @@ contract ScrobbleLogV2 is Ownable {
                 continue;
             }
 
-            emit BatchCommitted(user, cid, startTs, endTs, count);
+            emit BatchCommitted(user, cid, cidHash, startTs, endTs, count, nonce);
             unchecked { ++i; }
         }
     }

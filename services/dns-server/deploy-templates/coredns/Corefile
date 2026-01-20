@@ -1,0 +1,10 @@
+.:5353 {
+    errors
+    health
+    ready
+    forward . /etc/resolv.conf
+    cache 30
+    loop
+    reload
+    loadbalance
+}

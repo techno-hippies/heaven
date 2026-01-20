@@ -8,19 +8,19 @@ import { cn } from '@/lib/utils'
 import { Icon, type IconName, type IconWeight } from '@/icons'
 
 const iconButtonVariants = cva(
-  'inline-flex items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 cursor-pointer active:scale-[0.98] flex-shrink-0',
+  'inline-flex items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 cursor-pointer active:scale-95 flex-shrink-0',
   {
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'text-muted-foreground hover:text-foreground hover:bg-secondary',
-        outline: 'border border-border bg-card text-foreground hover:bg-secondary',
+        ghost: 'text-foreground hover:bg-secondary',
+        outline: 'border border-border bg-transparent text-foreground hover:bg-secondary/50',
       },
       size: {
-        sm: 'h-9 w-9',
-        md: 'h-11 w-11',
-        lg: 'h-12 w-12',
+        sm: 'h-10 w-10',
+        md: 'h-12 w-12',
+        lg: 'h-14 w-14',
       },
     },
     defaultVariants: {
@@ -31,9 +31,9 @@ const iconButtonVariants = cva(
 )
 
 const iconSizeClasses = {
-  sm: 'text-[16px]',
-  md: 'text-[20px]',
-  lg: 'text-[24px]',
+  sm: 'text-[20px]',
+  md: 'text-[22px]',
+  lg: 'text-[26px]',
 } as const
 
 export interface IconButtonProps

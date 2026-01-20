@@ -1,0 +1,89 @@
+# Profile from DirectoryV2
+type Profile @entity(immutable: false) {
+  id: Bytes! # PKP address (lowercase)
+
+  # Directory fields
+  animeCid: Bytes
+  encPhotoCid: Bytes
+  ageBucket: Int!           # 0=unset, 1=18-24, 2=25-29, 3=30-34, 4=35-39, 5=40-49, 6=50+
+  verifiedLevel: Int!       # 0=none, 1=email, 2=phone, 3=passport
+  claimedAgeBucket: Int!    # user-set pre-verification
+  genderIdentity: Int!      # 0=hidden, 1=man, 2=woman, 3=trans_man, 4=trans_woman, 5=non_binary
+  modelVersion: Int!
+  updatedAt: BigInt!
+
+  # DatingV3 state
+  profileInitialized: Boolean!
+  isVerified: Boolean!      # Self.xyz verified
+
+  # Derived relationships
+  likesSent: [Like!]! @derivedFrom(field: "from")
+  likesReceived: [Like!]! @derivedFrom(field: "to")
+  matchesAsUser1: [Match!]! @derivedFrom(field: "user1")
+  matchesAsUser2: [Match!]! @derivedFrom(field: "user2")
+
+  # Stats
+  totalLikesSent: Int!
+  totalLikesReceived: Int!
+  totalMatches: Int!
+
+  # Block metadata
+  createdAt: BigInt!
+  createdTxHash: Bytes!
+}
+
+# Like from DatingV3.LikeSent event
+type Like @entity(immutable: true) {
+  id: ID!                   # txHash-logIndex
+  from: Profile!
+  to: Profile!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Pending match awaiting FHE decryption
+type PendingMatch @entity(immutable: false) {
+  id: Bytes!                # pairKey (keccak256(user1, user2))
+  user1: Profile!
+  user2: Profile!
+  mutualOkHandle: Bytes!
+  timestamp: BigInt!
+  finalized: Boolean!
+  finalizedAt: BigInt
+  transactionHash: Bytes!
+}
+
+# Finalized match from DatingV3.MatchCreated event
+type Match @entity(immutable: true) {
+  id: ID!                   # user1-user2 (sorted)
+  user1: Profile!
+  user2: Profile!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Like authorization from DatingV3.LikesAuthorized event
+type LikeAuthorization @entity(immutable: false) {
+  id: ID!                   # user-nonce
+  user: Profile!
+  candidateSetRoot: Bytes!
+  maxLikes: Int!
+  likesUsed: Int!
+  expiry: BigInt!
+  nonce: BigInt!
+  active: Boolean!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Global stats singleton
+type GlobalStats @entity(immutable: false) {
+  id: ID!                   # "global"
+  totalProfiles: Int!
+  totalLikes: Int!
+  totalMatches: Int!
+  totalPendingMatches: Int!
+  lastActivityAt: BigInt
+}

@@ -10,7 +10,7 @@
  */
 
 import { type ParentComponent, onCleanup } from 'solid-js'
-import { createConfig, http, reconnect } from '@wagmi/core'
+import { createConfig, http } from '@wagmi/core'
 import { mainnet, sepolia, baseSepolia } from '@wagmi/core/chains'
 import { injected } from '@wagmi/connectors'
 
@@ -31,9 +31,6 @@ export const wagmiConfig = createConfig({
     [baseSepolia.id]: http(BASE_SEPOLIA_RPC),
   },
 })
-
-// Auto-reconnect on page load
-reconnect(wagmiConfig)
 
 /**
  * Web3Provider - Wraps app to provide wagmi context

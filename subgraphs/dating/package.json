@@ -1,0 +1,21 @@
+{
+  "name": "heaven-dating-subgraph",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --studio heaven-dating",
+    "deploy:local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 heaven-dating",
+    "create:local": "graph create --node http://localhost:8020/ heaven-dating",
+    "remove:local": "graph remove --node http://localhost:8020/ heaven-dating",
+    "auth": "graph auth"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.71.0",
+    "@graphprotocol/graph-ts": "^0.35.1"
+  },
+  "devDependencies": {
+    "matchstick-as": "^0.6.0"
+  }
+}

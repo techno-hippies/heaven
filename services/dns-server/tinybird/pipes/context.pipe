@@ -1,0 +1,20 @@
+DESCRIPTION >
+    Get user's recent browsing context (last 24h category mix)
+    Used by AI accountability partner
+
+NODE get_context
+SQL >
+    %
+    SELECT
+        category_id,
+        sum(cnt) AS total,
+        sum(blocked_cnt) AS blocked
+    FROM user_category_daily_mv
+    WHERE
+        wallet_id = {{String(wallet_id, '')}}
+        AND day >= today() - 1
+    GROUP BY category_id
+    ORDER BY total DESC
+    LIMIT 20
+
+TYPE endpoint

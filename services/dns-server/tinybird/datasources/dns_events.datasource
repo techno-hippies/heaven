@@ -1,0 +1,18 @@
+DESCRIPTION >
+    DNS query events from hp-dns-gw
+
+SCHEMA >
+    `ts` DateTime64(3) `json:$.ts`,
+    `wallet_id` String `json:$.wallet_id`,
+    `device_id` String `json:$.device_id`,
+    `etld1` String `json:$.etld1`,
+    `domain_hmac` String `json:$.domain_hmac`,
+    `qtype` String `json:$.qtype`,
+    `action` String `json:$.action`,
+    `category_id` Nullable(Int32) `json:$.category_id`,
+    `latency_ms` UInt32 `json:$.latency_ms`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(ts)"
+ENGINE_SORTING_KEY "wallet_id, ts"
+ENGINE_TTL "toDateTime(ts) + INTERVAL 90 DAY"

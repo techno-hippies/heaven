@@ -30,6 +30,7 @@ User EOA                    Lit Action                  Contract
 | Action | File | Purpose |
 |--------|------|---------|
 | Survey Sponsor | `actions/survey-registry-sponsor-v1.js` | Register surveys to SurveyRegistry |
+| Scrobble Batch Sponsor | `actions/scrobble-batch-sign-v2.js` | Pin scrobbles to IPFS and commit to ScrobbleLogV2 |
 
 ## Deployed Resources
 
@@ -37,14 +38,17 @@ User EOA                    Lit Action                  Contract
 |----------|-------|
 | Sponsor PKP | `0x089fc7801D8f7D487765343a7946b1b97A7d29D4` |
 | SurveyRegistry | `0xdf9ed085cf7f676ccce760c219ce118ab38ce8ca` (Base Sepolia) |
-| Action CID | See `cids/dev.json` |
+| ScrobbleLogV2 | `0x1AA06c3d5F4f26C8E1954C39C341C543b32963ea` (Base Sepolia) |
+| Action CIDs | See `cids/dev.json` |
 
 ## Commands
 
 ```bash
-bun scripts/mint-pkp.ts      # Mint new sponsor PKP
-bun scripts/setup.ts survey  # Deploy action to IPFS + add permission
-bun tests/survey-sponsor.test.ts --broadcast  # Test with real tx
+bun scripts/mint-pkp.ts       # Mint new sponsor PKP
+bun scripts/setup.ts survey   # Deploy survey action to IPFS + add permission
+bun scripts/setup.ts scrobble # Deploy scrobble action to IPFS + add permission
+bun tests/survey-sponsor.test.ts --broadcast   # Test survey flow
+bun tests/scrobble-batch-sign.test.ts          # Test scrobble flow
 ```
 
 ## Updating an Action
@@ -64,13 +68,17 @@ bun tests/survey-sponsor.test.ts --broadcast  # Test with real tx
 ```
 lit-actions/
 ├── actions/                    # Lit Action source files
-│   └── survey-registry-sponsor-v1.js
+│   ├── survey-registry-sponsor-v1.js
+│   └── scrobble-batch-sign-v2.js
 ├── scripts/
 │   ├── mint-pkp.ts            # Mint new PKP with EOA ownership
 │   └── setup.ts               # Deploy action + add permission
 ├── tests/
-│   ├── survey-sponsor.test.ts # E2E test for survey flow
-│   └── shared/env.ts          # Network detection
+│   ├── survey-sponsor.test.ts      # E2E test for survey flow
+│   ├── scrobble-batch-sign.test.ts # E2E test for scrobble flow
+│   └── shared/env.ts               # Network detection
+├── keys/
+│   └── dev/scrobble/          # Encrypted Filebase API key
 ├── output/
 │   └── pkp-naga-dev.json      # PKP credentials
 └── cids/

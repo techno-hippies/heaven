@@ -1,0 +1,30 @@
+DESCRIPTION >
+    Get user's interest vector for matching
+    Returns normalized category weights
+
+NODE get_vector
+SQL >
+    %
+    WITH user_totals AS (
+        SELECT
+            category_id,
+            sum(cnt) AS cnt
+        FROM user_category_daily_mv
+        WHERE
+            wallet_id = {{String(wallet_id, '')}}
+            AND day >= today() - 7
+            AND category_id < 100  -- Exclude sensitive categories
+        GROUP BY category_id
+    ),
+    total AS (
+        SELECT sum(cnt) AS grand_total FROM user_totals
+    )
+    SELECT
+        category_id,
+        cnt,
+        round(cnt / grand_total, 4) AS weight
+    FROM user_totals, total
+    WHERE grand_total > 0
+    ORDER BY weight DESC
+
+TYPE endpoint

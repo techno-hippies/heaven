@@ -1,0 +1,29 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: ScrobbleLogV2
+    network: base-sepolia
+    source:
+      address: "0x1AA06c3d5F4f26C8E1954C39C341C543b32963ea"
+      abi: ScrobbleLogV2
+      startBlock: 36517900
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - ScrobbleBatch
+        - Track
+        - GlobalStats
+      abis:
+        - name: ScrobbleLogV2
+          file: ./abis/ScrobbleLogV2.json
+      eventHandlers:
+        - event: BatchCommitted(indexed address,bytes,bytes32,uint40,uint40,uint32,uint64)
+          handler: handleBatchCommitted
+      file: ./src/mappings.ts

@@ -27,6 +27,8 @@ import IconSpotifyLogoRegular from 'phosphor-icons-solid/IconSpotifyLogoRegular'
 import IconYoutubeLogoRegular from 'phosphor-icons-solid/IconYoutubeLogoRegular'
 import IconVinylRecordRegular from 'phosphor-icons-solid/IconVinylRecordRegular'
 import IconListRegular from 'phosphor-icons-solid/IconListRegular'
+import IconXCircleRegular from 'phosphor-icons-solid/IconXCircleRegular'
+import IconXRegular from 'phosphor-icons-solid/IconXRegular'
 
 // Fill weight
 import IconMusicNoteFill from 'phosphor-icons-solid/IconMusicNoteFill'
@@ -47,6 +49,8 @@ import IconSpotifyLogoFill from 'phosphor-icons-solid/IconSpotifyLogoFill'
 import IconYoutubeLogoFill from 'phosphor-icons-solid/IconYoutubeLogoFill'
 import IconVinylRecordFill from 'phosphor-icons-solid/IconVinylRecordFill'
 import IconListFill from 'phosphor-icons-solid/IconListFill'
+import IconXCircleFill from 'phosphor-icons-solid/IconXCircleFill'
+import IconXFill from 'phosphor-icons-solid/IconXFill'
 
 // Bold weight
 import IconMusicNoteBold from 'phosphor-icons-solid/IconMusicNoteBold'
@@ -67,6 +71,8 @@ import IconSpotifyLogoBold from 'phosphor-icons-solid/IconSpotifyLogoBold'
 import IconYoutubeLogoBold from 'phosphor-icons-solid/IconYoutubeLogoBold'
 import IconVinylRecordBold from 'phosphor-icons-solid/IconVinylRecordBold'
 import IconListBold from 'phosphor-icons-solid/IconListBold'
+import IconXCircleBold from 'phosphor-icons-solid/IconXCircleBold'
+import IconXBold from 'phosphor-icons-solid/IconXBold'
 
 export type IconWeight = 'regular' | 'fill' | 'bold'
 
@@ -89,6 +95,8 @@ export type IconName =
   | 'youtube-logo'
   | 'vinyl-record'
   | 'list'
+  | 'x-circle'
+  | 'x'
 
 const iconMap: Record<IconName, Record<IconWeight, Component<{ class?: string }>>> = {
   'music-note': { regular: IconMusicNoteRegular, fill: IconMusicNoteFill, bold: IconMusicNoteBold },
@@ -109,6 +117,8 @@ const iconMap: Record<IconName, Record<IconWeight, Component<{ class?: string }>
   'youtube-logo': { regular: IconYoutubeLogoRegular, fill: IconYoutubeLogoFill, bold: IconYoutubeLogoBold },
   'vinyl-record': { regular: IconVinylRecordRegular, fill: IconVinylRecordFill, bold: IconVinylRecordBold },
   'list': { regular: IconListRegular, fill: IconListFill, bold: IconListBold },
+  'x-circle': { regular: IconXCircleRegular, fill: IconXCircleFill, bold: IconXCircleBold },
+  'x': { regular: IconXRegular, fill: IconXFill, bold: IconXBold },
 }
 
 export interface IconProps extends JSX.HTMLAttributes<SVGSVGElement> {

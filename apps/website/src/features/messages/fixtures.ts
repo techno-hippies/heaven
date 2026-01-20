@@ -1,7 +1,11 @@
 import type { Chat, Message } from './types'
+import type { MatchProfile } from '@/features/matching'
 
 const getAvatarUrl = (seed: string) =>
   `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&backgroundColor=65c9ff,b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`
+
+const getAnimeAvatar = (seed: string) =>
+  `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`
 
 export const SCARLETT_CHAT: Chat = {
   id: 'scarlett',
@@ -142,3 +146,12 @@ export const DEFAULT_MESSAGES: Record<string, Message[]> = {
 }
 
 export const SAMPLE_CHATS_WITH_SCARLETT = [SCARLETT_CHAT, ...SAMPLE_CHATS]
+
+export const SAMPLE_MATCHES: MatchProfile[] = [
+  { id: 'm1', name: 'Luna', avatar: getAnimeAvatar('luna'), isNew: true },
+  { id: 'm2', name: 'Nova', avatar: getAnimeAvatar('nova'), isNew: true },
+  { id: 'm3', name: 'Aria', avatar: getAnimeAvatar('aria') },
+  { id: 'm4', name: 'Kai', avatar: getAnimeAvatar('kai') },
+  { id: 'm5', name: 'Miko', avatar: getAnimeAvatar('miko') },
+  { id: 'm6', name: 'Zen', avatar: getAnimeAvatar('zen') },
+]

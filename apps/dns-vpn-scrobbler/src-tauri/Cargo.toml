@@ -1,10 +1,10 @@
 [package]
-name = "scrobbler"
+name = "heaven"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "scrobbler_lib"
+name = "heaven_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -22,15 +22,25 @@ env_logger = "0.11"
 # Auth (browser callback)
 open = "5"
 urlencoding = "2"
+base64 = "0.22"
+
+# VPN (WireGuard key generation + config export)
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+rfd = "0.14"
+rand = "0.8"
 
 # Database
 rusqlite = { version = "0.31", features = ["bundled"] }
 
 # DBus for MPRIS (Linux media player detection)
-# zbus = "4"  # Uncomment when implementing MPRIS
+zbus = { version = "4", default-features = false, features = ["tokio"] }
+futures-util = "0.3"
 
-# Crypto for signatures
-# k256 = "0.13"  # Uncomment for PKP signing
+# Hashing for track identity
+sha2 = "0.10"
+
+# Timezone for local time calculations
+libc = "0.2"
 
 [profile.release]
 lto = true

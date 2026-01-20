@@ -1,0 +1,23 @@
+# WireGuard peer configs (contain private keys)
+*.conf
+peer_*.conf
+wg-config/peer_*/
+
+# WireGuard server keys (generated on deploy)
+wg-config/server/
+wg-config/.donoteditthisfile
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Production backups (contain secrets)
+db-backup.sql
+wg-config-backup/
+
+# Rust build artifacts
+target/
+
+# PostgreSQL data
+pg-data/

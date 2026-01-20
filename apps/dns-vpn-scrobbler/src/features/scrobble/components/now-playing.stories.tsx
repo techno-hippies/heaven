@@ -17,29 +17,28 @@ const meta: Meta<typeof NowPlaying> = {
 export default meta
 type Story = StoryObj<typeof NowPlaying>
 
-export const WithAlbumArt: Story = {
+export const Playing: Story = {
   args: {
     title: 'Weird Fishes/Arpeggi',
     artist: 'Radiohead',
     albumArtUrl: 'https://picsum.photos/seed/inrainbows/200/200',
-    position: 127,
-    duration: 309,
+    isPlaying: true,
+  },
+}
+
+export const Paused: Story = {
+  args: {
+    title: 'Karma Police',
+    artist: 'Radiohead',
+    albumArtUrl: 'https://picsum.photos/seed/okcomputer/200/200',
+    isPlaying: false,
   },
 }
 
 export const NoAlbumArt: Story = {
   args: {
-    title: 'Karma Police',
-    artist: 'Radiohead',
-    position: 154,
-    duration: 262,
-  },
-}
-
-export const NoDuration: Story = {
-  args: {
     title: 'Unknown Track',
     artist: 'Unknown Artist',
-    albumArtUrl: 'https://picsum.photos/seed/unknown/200/200',
+    isPlaying: true,
   },
 }

@@ -51,11 +51,25 @@ const ACTIONS: Record<string, ActionDef> = {
   },
   scrobble: {
     name: 'scrobble',
-    path: 'actions/scrobble-batch-sign-v1.js',
-    displayName: 'Scrobble Batch Sign v1',
+    path: 'actions/scrobble-batch-sign-v2.js',
+    displayName: 'Scrobble Batch Sponsor v2',
     keys: [
-      { name: 'filebase_api_key', envVar: 'FILEBASE_API_KEY' },
+      { name: 'filebase_api_key', envVar: 'FILEBASE_SCROBBLE_BUCKET_API_KEY' },
     ],
+  },
+  profilePin: {
+    name: 'profilePin',
+    path: 'actions/profile-pin-v1.js',
+    displayName: 'Profile Pin v1',
+    keys: [
+      { name: 'filebase_api_key', envVar: 'FILEBASE_PROFILE_BUCKET_API_KEY' },
+    ],
+  },
+  datingSetbasics: {
+    name: 'datingSetbasics',
+    path: 'actions/dating-setbasics-v1.js',
+    displayName: 'Dating SetBasics v1',
+    keys: [], // No keys needed - user pays gas
   },
 };
 

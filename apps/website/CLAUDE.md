@@ -153,6 +153,57 @@ Optimistic minting - user doesn't wait:
 4. If mint fails: show non-blocking toast/banner with retry
 5. If mint succeeds: silent (profile active)
 
+## Routing
+
+Uses `HashRouter` from `@solidjs/router` - all routes are hash-based:
+- `http://localhost:3000/#/` - Home
+- `http://localhost:3000/#/messages` - Messages
+- `http://localhost:3000/#/onboarding` - Onboarding flow
+- `http://localhost:3000/#/c/:token` - Claim page
+
+**Important**: SolidJS reactivity requires `<Show>` components for conditional rendering, not early `if` returns. Early returns break reactivity.
+
+## Claim Page (COMPLETE)
+
+Shadow profile claim flow at `/c/:token`. Fully wired to API with real Lit Protocol PKP minting.
+
+**Flow**: `loading` → `profile` → `bio-edit` | `checking` → `passkey` → `minting` → `success` → redirect to `/onboarding`
+
+**States**:
+- `loading` - Fetching profile from API
+- `profile` - Show profile, choose verification method (bio-edit or DM token)
+- `bio-edit` - User adds verification code to source bio
+- `checking` - Re-scraping/verifying
+- `passkey` - Ready to create WebAuthn passkey
+- `minting` - Creating PKP (3-5 seconds, shows spinner)
+- `success` - Profile claimed, auto-redirect to onboarding
+
+**API endpoints** (workers/api on port 8787):
+- `GET /api/claim/:token` - Lookup profile by claim token
+- `POST /api/claim/start` - Start verification, get code
+- `POST /api/claim/verify-bio` - Verify bio edit
+- `POST /api/claim/verify-dm` - Verify DM token
+- `POST /api/claim/complete` - Complete claim (links PKP address to shadow profile)
+
+**Lit Integration** (`lib/lit/auth-webauthn.ts`):
+- `mintPKPForClaim()` - Mints new PKP without session auth (avoids double WebAuthn prompt)
+- User gets full PKP ownership via passkey
+- Session auth happens later when user starts onboarding
+
+**Test URLs** (after running `bun run seed` in workers/api):
+```
+http://localhost:3000/#/c/test-alex   (DM code: HVN-ALEX01)
+http://localhost:3000/#/c/test-jordan (DM code: HVN-JRDN02)
+http://localhost:3000/#/c/test-sam    (DM code: HVN-SAM003)
+```
+
+**Seeding**:
+```bash
+cd workers/api && bun run seed
+# Then apply SQL:
+wrangler d1 execute heaven-api --local --file=./scripts/seed.sql --yes
+```
+
 ## Conventions
 
 - **Icons**: Use `Icon` from `@/icons` (Phosphor)
@@ -160,3 +211,22 @@ Optimistic minting - user doesn't wait:
 - **Icon buttons**: Always use `IconButton` from `@/ui/icon-button`
 - **Utilities**: `cn()` for classes, `haptic` for feedback
 - **No emojis** in UI unless user-facing content requires it
+- **Conditional rendering**: Use `<Show>` not early `if` returns
+
+## Current Status
+
+### Completed
+- [x] Claim page UI with all states (Storybook stories)
+- [x] Claim API endpoints in workers/api
+- [x] Lit Protocol PKP minting via WebAuthn
+- [x] Loading states during PKP mint (3-5s)
+- [x] Post-claim redirect to onboarding
+- [x] Multiple source support (dateme, cuties, acx)
+- [x] Test seed data with claim tokens
+- [x] Onboarding auth gate - prompts passkey sign-in before flow starts
+
+### Next Steps
+1. **Onboarding contract mint** - After Phase 1, mint on-chain profile (optimistic)
+2. **Home page** - Show feed of profiles (shadow + claimed)
+3. **Like/match flow** - Wire liking to API, handle mutual matches
+4. **XMTP messaging** - Enable chat on mutual match

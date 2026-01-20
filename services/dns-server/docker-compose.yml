@@ -1,0 +1,117 @@
+version: "3.8"
+
+services:
+  # WireGuard VPN server
+  wireguard:
+    image: ${WIREGUARD_IMAGE:-linuxserver/wireguard}
+    container_name: hp-wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - SERVERURL=${SERVER_IP:-144.126.205.242}
+      - SERVERPORT=51820
+      - PEERS=0  # We manage peers via API
+      - INTERNAL_SUBNET=10.13.13.0/24
+      - ALLOWEDIPS=0.0.0.0/0,::/0
+    volumes:
+      - ./wg-config:/config
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "51820:51820/udp"
+      - "8080:8080"
+    networks:
+      internal:
+        ipv4_address: 172.20.0.2
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    restart: unless-stopped
+
+  # DNS Gateway (your service)
+  hp-dns-gw:
+    build: ./hp-dns-gw
+    container_name: hp-dns-gw
+    network_mode: "service:wireguard"  # Shares wg0 + internal network
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./wg-config:/config
+    environment:
+      - DNS_LISTEN=0.0.0.0:53
+      - API_LISTEN=0.0.0.0:8080
+      - UPSTREAM_DNS=172.20.0.10:53
+      - DATABASE_URL=postgres://hp:hp@172.20.0.11:5432/hp
+      - VPN_SUBNET=10.13.13.0/24
+      - WG_SERVER_PUBKEY=${WG_SERVER_PUBKEY}
+      - WG_SERVER_ENDPOINT=${SERVER_IP:-144.126.205.242}:51820
+      - TINYBIRD_TOKEN=${TINYBIRD_TOKEN}
+      - TINYBIRD_ENDPOINT=https://api.us-east.tinybird.co
+      - HMAC_SECRET=${HMAC_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_DOMAIN=${AUTH_DOMAIN:-hp-dns-gw.local}
+    depends_on:
+      - wireguard
+      - resolver
+      - postgres
+    restart: unless-stopped
+
+  # Handshake-aware DNS resolver (ICANN + HNS + ETH)
+  resolver:
+    image: jamesstevens/handshake-volume-resolver
+    container_name: hp-resolver
+    environment:
+      - HSD_MASTERS=172.20.0.12:5349
+    ports:
+      - "127.0.0.1:5353:53/udp"
+      - "127.0.0.1:5353:53/tcp"
+    depends_on:
+      - hsd
+    networks:
+      internal:
+        ipv4_address: 172.20.0.10
+    restart: unless-stopped
+
+  # Handshake full node
+  hsd:
+    image: handshakeorg/hsd:latest
+    container_name: hp-hsd
+    command: ["--ns-host=0.0.0.0", "--ns-port=5349", "--no-wallet"]
+    volumes:
+      - hsd-data:/root/.hsd
+    networks:
+      internal:
+        ipv4_address: 172.20.0.12
+    restart: unless-stopped
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: hp-postgres
+    environment:
+      - POSTGRES_USER=hp
+      - POSTGRES_PASSWORD=hp
+      - POSTGRES_DB=hp
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      internal:
+        ipv4_address: 172.20.0.11
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  hsd-data:
+  pg-data:

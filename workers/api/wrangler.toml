@@ -1,0 +1,24 @@
+name = "heaven-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "development"
+# DNS_SHARED_SECRET = "your-secret-here"  # Set via wrangler secret for production
+
+[[d1_databases]]
+binding = "DB"
+database_name = "heaven-api"
+database_id = "TODO_CREATE_DATABASE"
+
+# For production, create database with:
+# wrangler d1 create heaven-api
+# Then update database_id above
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "heaven-api-prod"
+database_id = "TODO_CREATE_PROD_DATABASE"

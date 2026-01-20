@@ -17,7 +17,14 @@ export {
 } from './storage'
 
 // WebAuthn authentication
-export { registerWithWebAuthn, authenticateWithWebAuthn, refreshAuth } from './auth-webauthn'
+export {
+  registerWithWebAuthn,
+  authenticateWithWebAuthn,
+  refreshAuth,
+  mintPKPForClaim,
+  createWebAuthnCredentialForClaim,
+  type WebAuthnCredential,
+} from './auth-webauthn'
 
 // EOA authentication
 export { registerWithEoa, loginWithEoa, getExistingPkpForEoa } from './auth-eoa'

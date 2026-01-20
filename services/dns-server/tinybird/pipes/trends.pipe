@@ -1,0 +1,18 @@
+DESCRIPTION >
+    Get user's 7-day category trends
+
+NODE get_trends
+SQL >
+    %
+    SELECT
+        day,
+        category_id,
+        cnt,
+        blocked_cnt
+    FROM user_category_daily_mv
+    WHERE
+        wallet_id = {{String(wallet_id, '')}}
+        AND day >= today() - 7
+    ORDER BY day DESC, cnt DESC
+
+TYPE endpoint

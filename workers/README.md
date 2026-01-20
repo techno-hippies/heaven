@@ -62,10 +62,45 @@ async function checkVpnStatus(): Promise<boolean> {
 }
 ```
 
+### api
+
+Main API for profiles, candidates, likes, and claim flow.
+
+**Endpoints:**
+
+| Path | Method | Description |
+|------|--------|-------------|
+| `/api/candidates` | GET | Get candidate profiles for swiping |
+| `/api/likes` | POST | Submit a like (relayer) |
+| `/api/claim/:token` | GET | Lookup shadow profile by claim token |
+| `/api/claim/start` | POST | Start claim, get verification code |
+| `/api/claim/verify-bio` | POST | Verify bio edit proof |
+| `/api/claim/verify-dm` | POST | Verify DM token/code |
+| `/api/claim/complete` | POST | Complete claim (after passkey) |
+| `/health` | GET | Health check |
+
+**Setup:**
+
+```bash
+cd workers/api
+bun install
+bun run db:init         # Initialize D1 schema
+bun run seed            # Seed test data (local)
+bun run dev             # Local development (port 8787)
+bun run deploy          # Deploy to Cloudflare
+```
+
+**Test claim URLs (after seeding):**
+
+```
+http://localhost:3000/#/c/test-alex    # 3 likes
+http://localhost:3000/#/c/test-jordan  # 1 like
+http://localhost:3000/#/c/test-sam     # 0 likes
+```
+
 ## Future Workers
 
 | Worker | Purpose |
 |--------|---------|
-| `api` | Main API (profiles, matching, etc.) |
 | `auth` | Lit Protocol PKP verification |
 | `ipfs-gateway` | Custom IPFS gateway with caching |

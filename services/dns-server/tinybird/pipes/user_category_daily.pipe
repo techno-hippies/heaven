@@ -1,0 +1,18 @@
+DESCRIPTION >
+    Daily category counts per user (materialized view)
+
+NODE aggregate
+SQL >
+    SELECT
+        wallet_id,
+        toDate(ts) AS day,
+        category_id,
+        count() AS cnt,
+        countIf(action = 'block') AS blocked_cnt,
+        avg(latency_ms) AS avg_latency_ms
+    FROM dns_events
+    WHERE category_id IS NOT NULL
+    GROUP BY wallet_id, day, category_id
+
+TYPE materialized
+DATASOURCE user_category_daily_mv

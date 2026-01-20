@@ -6,41 +6,91 @@ Desktop app for music scrobbling + DNS-based content filtering (VPN). Built with
 
 ## Project Overview
 
-**Current Phase:** Scrobbling first, VPN later.
+**Current Phase:** Scrobbling complete. VPN working with known browser limitations.
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| **Scrobbling** | Building | Collect music plays, batch to IPFS, anchor on-chain |
-| **DNS VPN** | Future | Port from higher-power dns-client when scrobbling works |
+| **Scrobbling Backend** | ✅ Complete | MPRIS listener + SQLite queue + Tauri commands/events |
+| **Scrobbling UI** | ✅ Complete | Dashboard with real data, Now Playing, Recent Tracks |
+| **Lit Action Sync** | ✅ Complete | Real batch signing via Lit Protocol |
+| **DNS VPN** | ⚠️ Partial | WireGuard tunnel + DNS routing works; browser single-label TLD issue |
+
+---
+
+## Implementation Status
+
+### Completed
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **MPRIS Listener** | ✅ Working | Detects players, tracks playback, handles play/pause |
+| **SQLite Queue** | ✅ Working | Stores scrobbles with art_url, sync status, batch CID |
+| **Tauri Commands** | ✅ Working | get_now_playing, get_recent_scrobbles, get_sync_status, etc |
+| **Frontend Hooks** | ✅ Working | useNowPlaying, useScrobbleQueue with art resolution |
+| **Dashboard UI** | ✅ Working | Now Playing card, stats, Recent Tracks with album art |
+| **ScrobbleLogV2 Contract** | ✅ Deployed | Base Sepolia: `0x1AA06c3d5F4f26C8E1954C39C341C543b32963ea` |
+| **Lit Action v2** | ✅ Deployed | CID: `QmUvFXHk83bxPqcxLijjDRXkjJHyW8sRjk2My4ZBsxs9n5` |
+| **Filebase Integration** | ✅ Working | Encrypted API key, real IPFS pinning tested |
+| **E2E Tests** | ✅ Passing | Both skip-pin and real-pinning modes |
+| **Subgraph** | ✅ Complete | Location: `/subgraph/scrobble-log/`, tested with gnd |
+| **Nonce Tracking** | ✅ Complete | SQLite table for replay protection |
+| **Lit Sync Service** | ✅ Complete | `src/lib/lit/scrobble-sync.ts` |
+
+### Key Files
+
+| File | Location |
+|------|----------|
+| Contract | `/contracts/base/src/ScrobbleLogV2.sol` |
+| Lit Action | `/lit-actions/actions/scrobble-batch-sign-v2.js` |
+| Action Test | `/lit-actions/tests/scrobble-batch-sign.test.ts` |
+| Encrypted Key | `/lit-actions/keys/dev/scrobble/filebase_api_key_scrobble.json` |
+| Action CID | `/lit-actions/cids/dev.json` |
+| Subgraph | `/subgraph/scrobble-log/` |
+| Lit Sync | `src/lib/lit/scrobble-sync.ts` |
+| Scrobble Hook | `src/features/scrobble/hooks/use-scrobble-queue.ts` |
 
 ---
 
 ## Architecture
 
-### Scrobbler Flow
+### Scrobbler Flow (Sponsored via Lit)
 
 ```
 ┌──────────────────┐     ┌───────────────────┐     ┌─────────────────┐
-│   Tauri Client   │────►│   Relay Worker    │────►│   Base L2       │
-│   (this app)     │     │   (CF Worker)     │     │   (contract)    │
+│   Tauri Client   │────►│   Lit Protocol    │────►│   Base L2       │
+│   (this app)     │     │   (Two PKPs)      │     │   (contract)    │
 │                  │     │                   │     │                 │
-│ - DBus/PulseAudio│     │ - Verify PKP sig  │     │ BatchCommitted  │
-│ - SQLite queue   │     │ - Pin to Filebase │     │ (event only)    │
-│ - Daily batch    │     │ - Submit tx       │     │                 │
-└──────────────────┘     └───────────────────┘     └─────────────────┘
+│ - DBus/PulseAudio│     │ 1. Decrypt Filebase     │ BatchCommitted  │
+│ - SQLite queue   │     │ 2. Pin to IPFS    │     │ (event only)    │
+│ - Daily batch    │     │ 3. User PKP signs │     │                 │
+└──────────────────┘     │ 4. Master PKP tx  │     └─────────────────┘
+                         └───────────────────┘
+                                  │
+                                  ▼ Master PKP pays gas
+                         ┌───────────────────┐
+                         │  Sponsored TX     │
+                         │  (user never pays)│
+                         └───────────────────┘
 ```
+
+**Two-PKP Architecture:**
+- **User PKP**: Signs batch digest (proves user authorized this batch)
+- **Master PKP** (`0x089fc7801D8f7D487765343a7946b1b97A7d29D4`): Submits tx and pays gas
 
 ### Data Flow
 
 1. **Client** collects scrobbles continuously (DBus/MPRIS on Linux)
 2. Appends to **local SQLite queue**
-3. Once per day (or per N scrobbles): builds **1 batch file** (NDJSON)
-4. Sends batch to **relay** with PKP signature
-5. Relay pins to **Filebase**, gets CID
-6. Relay submits **1 tx** to contract with event:
-   ```solidity
-   event BatchCommitted(address indexed user, bytes cid, uint40 startTs, uint40 endTs, uint32 count)
-   ```
+3. Once per day (or per N scrobbles): builds **1 batch** (JSON array)
+4. Calls **Lit Action v2** with batch data:
+   - Lit Action decrypts Filebase API key (only accessible inside Lit nodes)
+   - Pins batch JSON to Filebase IPFS (via `runOnce`)
+   - Computes count/startTs/endTs from actual tracks (doesn't trust client)
+   - User PKP signs digest
+   - Master PKP signs and broadcasts tx (pays gas)
+   - Returns: `{ txHash, cidString, cidHash, ... }`
+5. **Contract** verifies user signature via `ECDSA.recover`, emits event
+6. **User never pays gas** - Master PKP sponsors all transactions
 
 ### Batch File Format (NDJSON)
 
@@ -88,9 +138,10 @@ apps/dns-vpn-scrobbler/
 │   ├── src/
 │   │   ├── lib.rs          # Main Tauri commands
 │   │   ├── scrobble/       # Scrobble collection
-│   │   │   ├── dbus.rs     # MPRIS listener
-│   │   │   ├── queue.rs    # SQLite queue
-│   │   │   └── batch.rs    # Batch builder
+│   │   │   ├── mpris.rs    # MPRIS listener + state updates
+│   │   │   ├── state.rs    # Track timing + threshold logic
+│   │   │   ├── queue.rs    # SQLite queue + sync metadata
+│   │   │   └── types.rs    # Shared scrobble types/events
 │   │   └── vpn/            # Future: WireGuard
 │   └── Cargo.toml
 ├── .storybook/             # Storybook config
@@ -100,44 +151,55 @@ apps/dns-vpn-scrobbler/
 └── CLAUDE.md
 ```
 
----
-
 ## Contract: ScrobbleLogV2 (Event-Only)
 
-Different from ScrobbleLogV1 in CLAUDE.md (per-track). This is **batch-based**:
+**Deployed:** Base Sepolia `0x1AA06c3d5F4f26C8E1954C39C341C543b32963ea`
+
+Different from ScrobbleLogV1 (per-track). This is **batch-based** with **user signature verification**:
 
 ```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
 contract ScrobbleLogV2 {
     event BatchCommitted(
         address indexed user,
         bytes cid,           // IPFS CID as raw bytes
+        bytes32 cidHash,     // keccak256(cid)
         uint40 startTs,      // First scrobble timestamp
         uint40 endTs,        // Last scrobble timestamp
-        uint32 count         // Number of scrobbles in batch
+        uint32 count,        // Number of scrobbles in batch
+        uint64 nonce         // Replay protection
     );
 
-    /// @notice Commit a batch of scrobbles (called by relay)
+    /// @notice Get digest for signing (EIP-191 personal sign)
+    function getDigest(
+        address user, bytes32 cidHash,
+        uint40 startTs, uint40 endTs,
+        uint32 count, uint64 nonce
+    ) public view returns (bytes32);
+
+    /// @notice Commit batch (anyone can submit with valid user signature)
     function commitBatch(
-        address user,
-        bytes calldata cid,
-        uint40 startTs,
-        uint40 endTs,
-        uint32 count
-    ) external {
-        // Relay is trusted, or add signature verification
-        emit BatchCommitted(user, cid, startTs, endTs, count);
-    }
+        address user, bytes calldata cid,
+        uint40 startTs, uint40 endTs,
+        uint32 count, uint64 nonce,
+        bytes calldata userSig  // Signature from PKP
+    ) external;
+
+    /// @notice Batch commit (skip invalid, emit BatchRejected)
+    function commitBatches(BatchInput[] calldata batches) external;
 }
 ```
+
+**Security:**
+- Signature verification via `ECDSA.recover` prevents forgery
+- EIP-191 personal sign format (`\x19Ethereum Signed Message:\n32`)
+- Nonce per user prevents replay attacks
+- Anyone can submit tx (gas sponsor friendly)
 
 **Why event-only:**
 - 1 tx per user per day (not per track)
 - CID in event log is permanent, queryable
-- No storage = minimal gas
-- Indexer (subgraph) fetches IPFS and builds aggregates
+- No storage = minimal gas (~25k per batch)
+- Subgraph fetches IPFS and builds aggregates
 
 ---
 
@@ -145,22 +207,46 @@ contract ScrobbleLogV2 {
 
 Location: `/media/t42/th42/Code/heaven/lit-actions/`
 
-### scrobble-batch-sign.js
+### scrobble-batch-sign-v2.js
 
-Signs scrobble batch for relay:
+**CID:** `QmUvFXHk83bxPqcxLijjDRXkjJHyW8sRjk2My4ZBsxs9n5`
+
+Pins batch to IPFS, signs with user PKP, and broadcasts via master PKP:
 
 ```javascript
-// Input: batchHash (sha256 of NDJSON), userAddress
-// Output: signature proving user owns this batch
+// Input from client:
+jsParams = {
+  userPkpPublicKey,       // User's PKP public key (signs digest)
+  tracks,                 // Array of { artist, title, album?, duration?, playedAt }
+  nonce,                  // Replay protection (client tracks this)
+  filebaseEncryptedKey,   // From keys/dev/scrobble/filebase_api_key_scrobble.json
+  dryRun,                 // Optional: return signed tx without broadcasting
+  skipPin,                // Optional: use cidOverride instead of pinning
+  cidOverride,            // Optional: pre-pinned CID for testing
+}
 
-const sigShare = await Lit.Actions.signEcdsa({
-  toSign: ethers.utils.arrayify(batchHash),
-  publicKey: pkpPublicKey,
-  sigName: "scrobble-batch"
-});
+// Inside Lit Action:
+// 1. Validate tracks and compute count/startTs/endTs from actual data
+// 2. Decrypt Filebase API key (runOnce - only one node does IO)
+// 3. Pin batch JSON to Filebase IPFS
+// 4. User PKP signs digest (proves authenticity)
+// 5. Build tx with commitBatch() calldata
+// 6. Master PKP signs and broadcasts tx (pays gas)
+
+// Output:
+response = {
+  success: true,
+  txHash,           // Transaction hash (from broadcast)
+  cidString,        // IPFS CID string
+  cidBytesHex,      // Raw CID bytes as hex
+  cidHash,          // keccak256(cidBytes)
+  startTs, endTs,   // Computed from tracks
+  count, nonce,     // Batch metadata
+  sponsor,          // Master PKP address (0x089fc...)
+}
 ```
 
-Relay verifies signature before pinning/submitting.
+**Key pattern:** Master PKP (`0x089fc7801D8f7D487765343a7946b1b97A7d29D4`) pays gas. User never needs ETH.
 
 ---
 
@@ -225,27 +311,35 @@ Batching happens in Rust backend. SQLite stores pending until batch is acked.
 
 ```
 ┌────────────────────────────────────────┐
-│ [Shield Icon]  Higher Power            │
+│ [Shield Icon]  Heaven                  │
 │                                        │
 │ ┌────────────────────────────────────┐ │
-│ │  Now Playing                       │ │
-│ │  Karma Police - Radiohead          │ │
-│ │  ▶ 2:34 / 4:22                     │ │
+│ │ [Art] ▶ Playing                    │ │
+│ │       Karma Police                 │ │
+│ │       Radiohead                    │ │
 │ └────────────────────────────────────┘ │
 │                                        │
-│ Today: 47 scrobbles                    │
-│ Pending sync: 123                      │
-│ Last sync: 2 hours ago                 │
+│ ┌─────────┐ ┌─────────┐               │
+│ │  47     │ │  123    │               │
+│ │ Today   │ │ Pending │               │
+│ └─────────┘ └─────────┘               │
 │                                        │
-│ [Sync Now]                             │
+│ Synced 2 hours ago        [Sync Now]  │
 │                                        │
-│ ──────────────────────────────────     │
-│ Recent                                 │
-│ • Let It Happen - Tame Impala   3m    │
-│ • Karma Police - Radiohead      7m    │
-│ • ...                                  │
+│ Recent Tracks                          │
+│ ┌────────────────────────────────────┐│
+│ │[art] Let It Happen       3m ago    ││
+│ │      Tame Impala         pending   ││
+│ │[art] Karma Police        7m ago    ││
+│ │      Radiohead           pending   ││
+│ └────────────────────────────────────┘│
 └────────────────────────────────────────┘
 ```
+
+**UI Notes:**
+- Now Playing shows play/pause state, no progress bar (simpler, avoids seek issues)
+- Recent Tracks show album art stored with each scrobble
+- Pending badge on unsynced items
 
 ### Settings
 
@@ -285,31 +379,180 @@ bun run tauri build
 
 ---
 
-## Migration from DNS-Client
+## DNS VPN Implementation
 
-When ready to add VPN:
+### Current Status (Jan 2025)
 
-1. Copy `src-tauri/src/lib.rs` VPN sections from `higher-power/apps/dns-client`
-2. Add WireGuard deps to Cargo.toml
-3. Create `src/features/vpn/` components
-4. Share auth flow (PKP already integrated)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **WireGuard Tunnel** | ✅ Working | Via `wg-quick` + `pkexec` |
+| **DNS Routing** | ✅ Working | All DNS routes through 10.13.13.1 |
+| **ICANN Domains** | ✅ Working | google.com, github.com, etc. |
+| **Handshake (dotted)** | ✅ Working | `nathan.woodburn/`, `d/` resolve and load |
+| **Handshake (single-label)** | ⚠️ DNS works, browser blocks | `shakestation` resolves but browsers refuse |
+| **DANE/TLSA** | ⚠️ Records resolve, no validation | Browsers don't support DANE natively |
+| **Tinybird Logging** | ✅ Working | DNS events logged for analytics |
 
-The app will support both features with tabs/nav.
+### Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Tauri Client   │────►│  WireGuard VPN   │────►│  VPN Server     │
+│  (this app)     │     │  (wg-quick)      │     │  144.126.205.242│
+│                 │     │                  │     │                 │
+│ - SIWE auth     │     │ - 10.13.13.x IP  │     │ - hp-dns-gw     │
+│ - PKP signing   │     │ - DNS via %i     │     │ - hp-resolver   │
+│ - Config file   │     │ - resolvectl     │     │ - hp-hsd        │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+```
+
+### DNS Resolution Chain
+
+```
+Browser → systemd-resolved → WireGuard (10.13.13.1) → hp-dns-gw → hp-resolver
+                                                                      │
+                                                          ┌───────────┴───────────┐
+                                                          ▼                       ▼
+                                                    ICANN (upstream)        HSD (Handshake)
+```
+
+### WireGuard Config (Linux)
+
+Generated by server at `/api/get-wg-config`, saved to:
+`~/.local/share/com.heaven.desktop/heaven-vpn.conf`
+
+```ini
+[Interface]
+PrivateKey = <generated>
+Address = 10.13.13.X/32
+PostUp = resolvectl dns %i 10.13.13.1; resolvectl domain %i "~."; resolvectl flush-caches
+PreDown = resolvectl revert %i || true
+
+[Peer]
+PublicKey = xLNj8b7YpyQTZaZDn6re8YQyN/AwCjD7ikm+SDRWniQ=
+AllowedIPs = 10.13.13.1/32
+Endpoint = 144.126.205.242:51820
+PersistentKeepalive = 25
+```
+
+**Key fix (Jan 2025):** DNS must be set on VPN interface (`%i`) not default interface (`$IF`).
+
+### Known Issues
+
+#### 1. Single-Label TLDs in Browsers
+
+**Problem:** Browsers block single-label hostnames (no dots) as a security policy.
+- `shakestation` → DNS resolves (tcpdump confirms) → Browser shows ERR_NAME_NOT_RESOLVED
+- `nathan.woodburn` → Works (has a dot)
+
+**Root cause:** Chrome/Firefox/Brave treat single-label names as search queries or intranet names.
+
+**Potential solutions:**
+- Browser extension to force navigation
+- Local proxy (PAC file or letsdane)
+- Not solvable via DNS alone
+
+#### 2. DANE/TLSA Not Validated
+
+**Problem:** TLSA records resolve but browsers don't validate them.
+- `dig @10.13.13.1 _443._tcp.shakestation TLSA` → Returns valid record
+- Browser still shows cert warning (ignores TLSA)
+
+**Solution needed:** letsdane proxy or browser extension for DANE validation.
+
+### Server Deployment
+
+Server: `144.126.205.242` (Digital Ocean)
+Deployed: `/opt/dns-vpn/`
+
+```bash
+# SSH to server
+ssh root@144.126.205.242
+
+# Check containers
+docker ps  # hp-wireguard, hp-dns-gw, hp-resolver, hp-hsd, hp-postgres
+
+# View logs
+docker logs hp-dns-gw --tail 50
+
+# Rebuild after code changes
+cd /opt/dns-vpn && docker compose build hp-dns-gw && docker compose up -d hp-dns-gw
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src-tauri/src/vpn/` | Rust VPN commands (connect, disconnect, status) |
+| `src/features/vpn/hooks/` | Frontend hooks for VPN state |
+| `src/lib/lit/sign.ts` | PKP message signing for SIWE |
+| `services/dns-server/src/api/mod.rs` | Server-side WireGuard config generation |
+
+### Testing VPN
+
+```bash
+# Check tunnel status
+sudo wg show heaven-vpn
+
+# Test DNS routing
+dig @10.13.13.1 google.com +short
+dig @10.13.13.1 d +short  # Handshake TLD
+
+# Test systemd-resolved
+resolvectl status heaven-vpn
+resolvectl query d
+
+# Monitor DNS traffic
+sudo tcpdump -ni heaven-vpn udp port 53
+```
+
+### Next Steps
+
+1. **Browser extension** for single-label TLD navigation
+2. **letsdane integration** for DANE/TLSA validation
+3. **UI polish** for VPN connect/disconnect
+4. **Auto-connect** on app startup (optional)
 
 ---
 
-## Relay Worker (Separate)
+## Subgraph
 
-Lives in `/media/t42/th42/Code/heaven/workers/scrobble-relay/`:
+Location: `/media/t42/th42/Code/heaven/subgraph/scrobble-log/`
 
-```typescript
-// POST /batch
-// Body: { batch: NDJSON, signature: hex, publicKey: hex }
-// 1. Verify PKP signature
-// 2. Derive user address from publicKey
-// 3. Pin to Filebase → get CID
-// 4. Call contract.commitBatch(user, cid, ...)
-// 5. Return { cid, txHash }
+Indexes `BatchCommitted` events and fetches IPFS batch content:
+
+```graphql
+type ScrobbleBatch @entity {
+  id: ID!                    # txHash-logIndex
+  user: User!
+  cid: String!
+  cidHash: Bytes!
+  startTs: BigInt!
+  endTs: BigInt!
+  count: Int!
+  nonce: BigInt!
+  tracks: [Track!]! @derivedFrom(field: "batch")
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Track @entity {
+  id: ID!                    # batchId-index
+  batch: ScrobbleBatch!
+  artist: String!
+  title: String!
+  album: String
+  duration: Int
+  playedAt: BigInt!
+}
+```
+
+**Local testing with gnd:**
+```bash
+export PATH="/usr/lib/postgresql/16/bin:$PATH"
+gnd --ethereum-rpc base-sepolia:$BASE_SEPOLIA_RPC
+# Access at http://localhost:8000/subgraphs/name/subgraph-0
 ```
 
 ---

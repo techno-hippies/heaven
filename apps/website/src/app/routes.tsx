@@ -11,9 +11,17 @@ const StorePage = lazy(() => import('@/pages/Store'))
 const ProfilePage = lazy(() => import('@/pages/Profile'))
 const MusicPage = lazy(() => import('@/pages/Music'))
 const OnboardingPage = lazy(() => import('@/pages/Onboarding'))
+const AuthPage = lazy(() => import('@/pages/Auth'))
+const ClaimPage = lazy(() => import('@/pages/Claim'))
 
 export const routes = (
   <>
+    {/* Auth bridge for Tauri desktop apps */}
+    <Route path="/auth" component={AuthPage} />
+
+    {/* Claim flow - no nav, standalone */}
+    <Route path="/c/:token" component={ClaimPage} />
+
     {/* Onboarding flow - no nav */}
     <Route path="/onboarding" component={OnboardingLayout}>
       <Route path="/:stepId?" component={OnboardingPage} />

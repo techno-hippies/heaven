@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 export interface SpinnerProps {
   /** Size of spinner */
-  size?: 'xs' | 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   /** Additional class names */
   class?: string
 }
@@ -13,10 +13,12 @@ const sizeClasses = {
   sm: 'w-4 h-4 border-2',
   md: 'w-6 h-6 border-2',
   lg: 'w-8 h-8 border-[3px]',
+  xl: 'w-12 h-12 border-4',
 } as const
 
 /**
  * Reusable loading spinner.
+ * Used throughout the app for async operations.
  */
 export const Spinner: Component<SpinnerProps> = (props) => {
   const size = () => props.size ?? 'md'

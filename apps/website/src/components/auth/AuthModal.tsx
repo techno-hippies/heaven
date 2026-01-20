@@ -128,6 +128,9 @@ export const AuthModal: Component<AuthModalProps> = (props) => {
     setAction(null)
   }
 
+  const showBack = () =>
+    (state() === 'idle' || state() === 'error') && method() === 'passkey'
+
   // Dynamic content based on state
   function getTitle() {
     if (state() === 'authenticating') {
@@ -234,13 +237,6 @@ export const AuthModal: Component<AuthModalProps> = (props) => {
           </Button>
         </div>
 
-        <button
-          onClick={handleBack}
-          class="text-muted-foreground hover:text-foreground mt-6 flex items-center justify-center gap-1"
-        >
-          <Icon name="arrow-left" class="text-base" />
-          <span>Back</span>
-        </button>
       </Show>
 
       {/* Wallet connecting state - show wallet address if connected */}
@@ -261,7 +257,7 @@ export const AuthModal: Component<AuthModalProps> = (props) => {
       fallback={
         // Desktop: Dialog
         <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-          <DialogContent class="max-w-sm">
+          <DialogContent class="max-w-sm" onBack={showBack() ? handleBack : undefined}>
             <DialogHeader class="text-center items-center pt-4">
               <DialogTitle class="text-xl">{getTitle()}</DialogTitle>
               <DialogDescription class="mt-2">{getDescription()}</DialogDescription>
@@ -278,7 +274,7 @@ export const AuthModal: Component<AuthModalProps> = (props) => {
     >
       {/* Mobile: Drawer */}
       <Drawer open={props.open} onOpenChange={props.onOpenChange}>
-        <DrawerContent>
+        <DrawerContent onBack={showBack() ? handleBack : undefined}>
           <DrawerHeader class="text-center items-center pt-4">
             <DrawerTitle class="text-xl">{getTitle()}</DrawerTitle>
             <DrawerDescription class="mt-2">{getDescription()}</DrawerDescription>

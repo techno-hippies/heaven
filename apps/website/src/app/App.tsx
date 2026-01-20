@@ -8,8 +8,10 @@ export const App = () => {
   return (
     <Web3Provider>
       <AuthProvider>
-        <HashRouter>{routes}</HashRouter>
-        <AuthDialog />
+        <HashRouter>
+          {routes}
+          <AuthDialog />
+        </HashRouter>
       </AuthProvider>
     </Web3Provider>
   )

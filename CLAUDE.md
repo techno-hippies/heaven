@@ -25,21 +25,27 @@ Use **bun** for all package operations:
 
 ```
 heaven/
-├── app/                    # SolidJS web app
-│   └── src/
-│       ├── components/ui/  # Base components
-│       ├── components/icons/
-│       ├── pages/
-│       └── lib/utils.ts    # cn(), haptic()
 ├── apps/
+│   ├── website/            # SolidJS web app (main frontend)
+│   │   └── src/
+│   │       ├── ui/         # Design system primitives
+│   │       ├── components/ # App components
+│   │       ├── features/   # Feature modules (onboarding, messages, etc.)
+│   │       ├── pages/      # Route pages (Home, Claim, etc.)
+│   │       └── lib/        # Utilities (cn(), haptic())
 │   ├── android/            # Kotlin VPN app
 │   └── desktop/            # Tauri VPN client
 ├── contracts/
-│   ├── name-registry/      # ENS subname NFTs (L1)
-│   └── dating/             # FHE matching (Directory, Dating, PartnerLink)
+│   ├── base/               # Base chain contracts (ScrobbleLog)
+│   └── fhevm/              # Zama fhEVM (Directory, Dating, PartnerLink)
 ├── services/dns-server/    # Rust DNS gateway
-├── workers/                # Cloudflare Workers
-└── lit-actions/            # PKP actions
+├── workers/
+│   ├── api/                # Main API (candidates, likes, claim)
+│   └── vpn-status/         # VPN connection check
+├── subgraphs/              # The Graph indexers
+│   └── dating/             # Likes/matches indexer
+├── lit-actions/            # Lit Protocol PKP actions
+└── docs/                   # Architecture docs
 ```
 
 ## Key Concepts
@@ -67,7 +73,47 @@ heaven/
 - Utilities: `cn()` for class merging, `haptic()` for feedback
 - Never store PII - use hashes and derived values
 - Lazy-mint PKPs (don't mint until anchor verified)
+- SolidJS: Use `<Show>` for conditional rendering, not early `if` returns
+
+## Current Status
+
+### Completed
+- **Claim Flow** - Full shadow profile claim with Lit PKP minting
+  - User visits `/c/:token` from email/notification
+  - Verifies ownership via bio-edit or DM token
+  - Creates WebAuthn passkey → mints PKP (3-5s)
+  - Redirects to onboarding
+- **API Worker** - Claim endpoints, shadow profiles, likes storage (D1)
+- **Lit Integration** - WebAuthn auth, PKP minting, session management
+
+### In Progress
+- **Onboarding** - UI steps built, needs PKP session wiring + contract mint
+
+### Next Up
+1. Wire onboarding to PKP auth (user authenticates at start)
+2. Mint on-chain profile after Phase 1 (optimistic)
+3. Home feed showing profiles
+4. Like/match flow with mutual match detection
+
+## Development
+
+```bash
+# Website (port 3000)
+cd apps/website && bun run dev
+
+# API worker (port 8787)
+cd workers/api && bun run dev
+
+# Seed test data
+cd workers/api && bun run seed
+wrangler d1 execute heaven-api --local --file=./scripts/seed.sql --yes
+
+# Test claim flow
+open http://localhost:3000/#/c/test-alex
+# DM code: HVN-ALEX01
+```
 
 ## Documentation
 
 See [README.md](./README.md) for detailed architecture, database schema, claim system, and integration specs.
+See [apps/website/CLAUDE.md](./apps/website/CLAUDE.md) for frontend-specific conventions.

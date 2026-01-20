@@ -35,6 +35,8 @@ interface LitEnvConfig {
 interface CIDs {
   survey: string;
   scrobble: string;
+  profilePin: string;
+  datingSetbasics: string;
   [key: string]: string;
 }
 
@@ -64,7 +66,7 @@ if (!envConfig) {
 
 // Load CIDs
 const cidPath = join(ROOT_DIR, envConfig.cidFile);
-let cids: CIDs = { survey: '', scrobble: '' };
+let cids: CIDs = { survey: '', scrobble: '', profilePin: '', datingSetbasics: '' };
 if (existsSync(cidPath)) {
   cids = JSON.parse(readFileSync(cidPath, 'utf-8'));
 }

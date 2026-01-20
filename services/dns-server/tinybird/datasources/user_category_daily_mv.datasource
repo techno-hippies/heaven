@@ -1,0 +1,13 @@
+DESCRIPTION >
+    Materialized view of daily category counts per user (populated by user_category_daily pipe)
+
+SCHEMA >
+    `wallet_id` String,
+    `day` Date,
+    `category_id` Int32,
+    `cnt` UInt64,
+    `blocked_cnt` UInt64,
+    `avg_latency_ms` Float64
+
+ENGINE "SummingMergeTree"
+ENGINE_SORTING_KEY "wallet_id, day, category_id"
