@@ -30,7 +30,10 @@ Privacy-first dating with encrypted compatibility matching, decentralized identi
 | [XMTP](https://xmtp.org/) | E2E encrypted messaging between matches |
 | [Self.xyz](https://self.xyz/) | Passport-based identity verification |
 | [Tauri](https://tauri.app/) | Desktop app framework (Rust + web frontend) |
-| [Tinybird](https://tinybird.co/) | DNS analytics pipeline |
+| [Tinybird](https://tinybird.co/) (ClickHouse) | DNS analytics pipeline |
+| [Agora](https://agora.io/) | WebRTC for real-time voice chat |
+| [ElevenLabs](https://elevenlabs.io/) | TTS for AI companion (Scarlett) |
+| [Groq](https://groq.com/) | LLM inference for AI chat |
 
 ## Architecture
 
