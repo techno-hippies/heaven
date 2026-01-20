@@ -25,7 +25,8 @@ Privacy-first dating with encrypted compatibility matching, decentralized identi
 | [Zama fhEVM](https://docs.zama.ai/) | Fully homomorphic encryption for private compatibility matching |
 | [Handshake](https://handshake.org/) | Decentralized DNS for `.⭐` and `.🌀` TLDs |
 | [handshake-volume-resolver](https://github.com/james-stevens/handshake-volume-resolver) | HNS + ICANN DNS resolution (fork) |
-| [Lit Protocol](https://developer.litprotocol.com/) | PKP wallets + Lit Actions for gasless sponsored transactions |
+| [Lit Protocol](https://developer.litprotocol.com/) | PKP wallets + Lit Actions for sponsored tx + access control encryption |
+| [Filebase](https://filebase.com/) | IPFS pinning for profiles, surveys, scrobbles |
 | [XMTP](https://xmtp.org/) | E2E encrypted messaging between matches |
 | [Self.xyz](https://self.xyz/) | Passport-based identity verification |
 | [Tauri](https://tauri.app/) | Desktop app framework (Rust + web frontend) |
@@ -92,12 +93,34 @@ Encrypted compatibility matching on [Zama fhEVM](https://docs.zama.ai/) (Sepolia
 
 Users encrypt preferences client-side with `@zama-fhe/relayer-sdk`. Compatibility computed on encrypted values - neither party reveals preferences unless matched.
 
+## IPFS + Lit Encryption
+
+User data is stored on IPFS with tiered encryption via Lit Protocol access control:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Client                                                              │
+│    ├── Encrypts sensitive tiers with Lit Protocol                   │
+│    ├── Pins to Filebase (IPFS) via Lit Action                       │
+│    └── Registers CID on-chain (SurveyRegistry, RecordsV2)           │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+| Tier | Visibility | Encryption |
+|------|------------|------------|
+| **Public** | Anyone | None |
+| **Match-Only** | Matched pairs | Lit (`areMatched()` condition) |
+| **Private** | Owner only | Lit (owner address condition) |
+
+**Storage**: [Filebase](https://filebase.com/) provides IPFS pinning with Filecoin backup. Users who want additional redundancy can pin the CID themselves via Filecoin/Filebase.
+
 ## Lit Actions
 
 Sponsored transactions without server-held private keys. Running on **Naga dev** network.
 
 | Action | Purpose |
 |--------|---------|
+| Profile pin | Encrypt + pin profile data to Filebase IPFS |
 | Survey sponsor | Gasless survey submissions to SurveyRegistry |
 | Scrobble batch | IPFS pin + on-chain commit to ScrobbleLogV2 |
 | FHE profile | Sponsor pays gas for DatingV3.setBasicsFor() |
