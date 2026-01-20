@@ -85,13 +85,18 @@ heaven/
   - Redirects to onboarding
 - **API Worker** - Claim endpoints, shadow profiles, likes storage (D1)
 - **Lit Integration** - WebAuthn auth, PKP minting, session management
+- **FHE Profile Sponsorship** - Gasless on-chain profile creation
+  - `DatingV3.setBasicsFor()` - Sponsor pays gas, user signs EIP-712 authorization
+  - Lit Action (`dating-setbasics-sponsor-v1.js`) handles dual-signature flow
+  - Real FHE encryption via `@zama-fhe/relayer-sdk`
+  - Tested on Sepolia: [TX](https://sepolia.etherscan.io/tx/0x20c052fd0f8e098683671a532bde4adeb77349bb0eff92cc59b32f095f7a6390)
 
 ### In Progress
-- **Onboarding** - UI steps built, needs PKP session wiring + contract mint
+- **Onboarding** - UI steps built, needs PKP session wiring + contract mint integration
 
 ### Next Up
 1. Wire onboarding to PKP auth (user authenticates at start)
-2. Mint on-chain profile after Phase 1 (optimistic)
+2. Integrate FHE sponsorship into onboarding Phase 1 mint
 3. Home feed showing profiles
 4. Like/match flow with mutual match detection
 

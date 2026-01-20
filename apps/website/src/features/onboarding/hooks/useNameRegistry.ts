@@ -6,6 +6,13 @@
  * - Availability checking
  * - Price calculation (with length-based multipliers)
  * - Registration
+ *
+ * Pricing (same for all TLDs):
+ * - 5+ chars: FREE
+ * - 4 chars: 0.02 ETH/yr
+ * - 3 chars: 0.05 ETH/yr
+ * - 2 chars: 0.1 ETH/yr
+ * - 1 char: BLOCKED
  */
 
 import { createSignal, createResource, createMemo } from 'solid-js'
@@ -16,7 +23,7 @@ import {
   type Address,
   type Hex,
 } from 'viem'
-import { sepolia } from 'viem/chains'
+import { base } from 'viem/chains'
 
 // Contract addresses from env (with fallback for Storybook)
 const REGISTRY_ADDRESS = (import.meta.env.VITE_NAME_REGISTRY_ADDRESS || '0x0000000000000000000000000000000000000000') as Address
@@ -105,16 +112,14 @@ const registrarAbi = [
 ] as const
 
 // Public client for read operations
-// Fallback to public Sepolia RPC for Storybook
+// Fallback to public Base RPC for Storybook
 const publicClient = createPublicClient({
-  chain: sepolia,
-  transport: http(import.meta.env.VITE_RPC_URL || 'https://rpc.sepolia.org'),
+  chain: base,
+  transport: http(import.meta.env.VITE_RPC_URL || 'https://mainnet.base.org'),
 })
 
 // Duration constants
 const ONE_YEAR = BigInt(365 * 24 * 60 * 60) // 365 days in seconds
-
-const OFFCHAIN_TLDS: TldId[] = ['heaven']
 
 export interface TldConfig {
   parentName: string
@@ -129,76 +134,48 @@ export interface TldConfig {
   lengthMult4: number
 }
 
-// .heaven is off-chain: free for 5+ chars, premium pricing for 1-4 chars
-// Price in wei (0.02 ETH base for short names)
-const HEAVEN_SHORT_NAME_PRICE = BigInt('20000000000000000') // 0.02 ETH
+// Default config for Storybook/dev when contract not connected
+// Matches contract pricing:
+// - 5+ chars: FREE (mult = 0)
+// - 4 chars: 0.02 ETH/yr (mult4 = 2)
+// - 3 chars: 0.05 ETH/yr (mult3 = 5)
+// - 2 chars: 0.1 ETH/yr (mult2 = 10)
+// - 1 char: BLOCKED (minLabelLength = 2)
+const BASE_PRICE_PER_YEAR = BigInt('10000000000000000') // 0.01 ETH
 
-const OFFCHAIN_TLD_CONFIGS: Partial<Record<TldId, TldConfig>> = {
-  heaven: {
-    parentName: 'heaven',
-    pricePerYear: HEAVEN_SHORT_NAME_PRICE,
-    minLabelLength: 4,
-    maxDuration: ONE_YEAR,
-    registrationsOpen: true,
-    lengthPricingEnabled: true,
-    lengthMult1: 10, // 1 char = 0.2 ETH
-    lengthMult2: 5,  // 2 char = 0.1 ETH
-    lengthMult3: 3,  // 3 char = 0.06 ETH
-    lengthMult4: 2,  // 4 char = 0.04 ETH
-    // 5+ chars = free (handled specially)
-  },
+const DEFAULT_TLD_CONFIG: TldConfig = {
+  parentName: '',
+  pricePerYear: BASE_PRICE_PER_YEAR,
+  minLabelLength: 2,
+  maxDuration: ONE_YEAR,
+  registrationsOpen: true,
+  lengthPricingEnabled: true,
+  lengthMult1: 0,   // blocked by minLength
+  lengthMult2: 10,  // 0.1 ETH
+  lengthMult3: 5,   // 0.05 ETH
+  lengthMult4: 2,   // 0.02 ETH
+  // 5+ chars: mult = 0 (FREE)
 }
 
-// Mock configs for Storybook/dev when contract not connected
-// .⭐ and .🌀 are on-chain, always paid
-const MOCK_ONCHAIN_PRICE = BigInt('5000000000000000') // 0.005 ETH base
-
-const STORYBOOK_TLD_CONFIGS: Partial<Record<TldId, TldConfig>> = {
-  star: {
-    parentName: '⭐',
-    pricePerYear: MOCK_ONCHAIN_PRICE,
-    minLabelLength: 4,
-    maxDuration: ONE_YEAR * BigInt(5),
-    registrationsOpen: true,
-    lengthPricingEnabled: true,
-    lengthMult1: 20, // 1 char = 0.1 ETH
-    lengthMult2: 10, // 2 char = 0.05 ETH
-    lengthMult3: 5,  // 3 char = 0.025 ETH
-    lengthMult4: 2,  // 4 char = 0.01 ETH
-    // 5+ chars = 0.005 ETH
-  },
-  spiral: {
-    parentName: '🌀',
-    pricePerYear: MOCK_ONCHAIN_PRICE,
-    minLabelLength: 4,
-    maxDuration: ONE_YEAR * BigInt(5),
-    registrationsOpen: true,
-    lengthPricingEnabled: true,
-    lengthMult1: 20,
-    lengthMult2: 10,
-    lengthMult3: 5,
-    lengthMult4: 2,
-  },
+const STORYBOOK_TLD_CONFIGS: Record<TldId, TldConfig> = {
+  heaven: { ...DEFAULT_TLD_CONFIG, parentName: 'heaven' },
+  star: { ...DEFAULT_TLD_CONFIG, parentName: '⭐' },
+  spiral: { ...DEFAULT_TLD_CONFIG, parentName: '🌀' },
 }
 
-const isOffchainTld = (tldId: TldId) => OFFCHAIN_TLDS.includes(tldId)
-
-// Reserved names for off-chain TLDs (and Storybook demo)
+// Reserved names (local check, contract also enforces)
 const RESERVED_NAMES = new Set([
   'admin', 'root', 'system', 'heaven', 'support', 'help',
   'official', 'mod', 'moderator', 'staff', 'team',
+  'hnsbridge', 'handshake', 'hns', 'security',
 ])
 
 /**
  * Fetch TLD configuration from contract
  */
 export async function getTldConfig(tldId: TldId): Promise<TldConfig | undefined> {
-  const offchainConfig = OFFCHAIN_TLD_CONFIGS[tldId]
-  if (offchainConfig) return offchainConfig
-
   // Skip on-chain calls if registry not configured (Storybook/dev)
   if (REGISTRY_ADDRESS === '0x0000000000000000000000000000000000000000') {
-    // Return mock config for Storybook
     return STORYBOOK_TLD_CONFIGS[tldId]
   }
 
@@ -226,7 +203,7 @@ export async function getTldConfig(tldId: TldId): Promise<TldConfig | undefined>
     }
   } catch (e) {
     console.warn(`Failed to fetch config for ${tldId}:`, e)
-    return undefined
+    return STORYBOOK_TLD_CONFIGS[tldId]
   }
 }
 
@@ -238,7 +215,11 @@ export async function checkAvailability(
   label: string
 ): Promise<boolean> {
   if (!label || label.length < 1) return false
-  if (isOffchainTld(tldId)) return true
+
+  // Storybook/dev mode
+  if (REGISTRY_ADDRESS === '0x0000000000000000000000000000000000000000') {
+    return true
+  }
 
   try {
     return await publicClient.readContract({
@@ -264,9 +245,6 @@ export async function checkReserved(
 
   // Check local reserved list (applies to all TLDs)
   if (RESERVED_NAMES.has(label.toLowerCase())) return true
-
-  // Off-chain TLDs only use local reserved list
-  if (isOffchainTld(tldId)) return false
 
   // Storybook/dev mode - only use local list
   if (REGISTRY_ADDRESS === '0x0000000000000000000000000000000000000000') {
@@ -295,7 +273,12 @@ export async function getPrice(
   durationYears: number = 1
 ): Promise<bigint> {
   if (!label || label.length < 1) return BigInt(0)
-  if (isOffchainTld(tldId)) return BigInt(0)
+
+  // Storybook/dev mode - use local calculation
+  if (REGISTRY_ADDRESS === '0x0000000000000000000000000000000000000000') {
+    const config = STORYBOOK_TLD_CONFIGS[tldId]
+    return calculatePriceLocal(config, label, durationYears)
+  }
 
   const duration = ONE_YEAR * BigInt(durationYears)
 
@@ -314,7 +297,7 @@ export async function getPrice(
 
 /**
  * Calculate price client-side (for immediate UI feedback)
- * Uses same logic as contract, with special handling for off-chain TLDs
+ * Uses same logic as contract
  *
  * @param forDisplay - if true, calculates price based on length even if below minLabelLength (for UI)
  */
@@ -322,30 +305,29 @@ export function calculatePriceLocal(
   config: TldConfig,
   label: string,
   durationYears: number = 1,
-  tldId?: TldId,
   forDisplay: boolean = false
 ): bigint {
   if (!label) return BigInt(0)
 
-  // For actual price calculation, require minLabelLength
-  // For display purposes, show what it would cost
-  if (!forDisplay && label.length < config.minLabelLength) return BigInt(0)
-
   const len = label.length
 
-  // .heaven special case: 5+ chars are free
-  if (tldId && isOffchainTld(tldId) && len >= 5) {
-    return BigInt(0)
-  }
+  // For actual price calculation, require minLabelLength
+  // For display purposes, show what it would cost
+  if (!forDisplay && len < config.minLabelLength) return BigInt(0)
 
-  let mult = 1
-
+  // Get multiplier based on length (matches contract _multForLength)
+  let mult = 0 // 5+ chars = FREE
   if (config.lengthPricingEnabled) {
     if (len === 1) mult = config.lengthMult1
     else if (len === 2) mult = config.lengthMult2
     else if (len === 3) mult = config.lengthMult3
     else if (len === 4) mult = config.lengthMult4
+    // 5+ chars: mult = 0 (FREE)
+  } else {
+    mult = 1
   }
+
+  if (mult === 0) return BigInt(0)
 
   const duration = ONE_YEAR * BigInt(durationYears)
   return (config.pricePerYear * BigInt(mult) * duration) / ONE_YEAR
@@ -419,9 +401,8 @@ export interface UseNameRegistryReturn {
   isChecking: () => boolean
 
   // Pricing context
-  isPremiumLength: () => boolean  // 1-4 chars (premium pricing)
-  isFreeEligible: () => boolean   // 5+ chars on off-chain TLD
-  isOffchainTld: () => boolean    // .heaven
+  isPremiumLength: () => boolean  // 2-4 chars (premium pricing)
+  isFreeEligible: () => boolean   // 5+ chars
 
   // Status helpers
   status: () => 'idle' | 'checking' | 'valid' | 'invalid' | 'reserved' | 'too-short'
@@ -487,7 +468,7 @@ export function useNameRegistry(
   const price = createMemo(() => {
     const config = tldConfig()
     if (!config) return BigInt(0)
-    return calculatePriceLocal(config, name(), 1, selectedTld())
+    return calculatePriceLocal(config, name(), 1)
   })
 
   const priceFormatted = createMemo(() => formatPrice(price()))
@@ -540,15 +521,13 @@ export function useNameRegistry(
   // Pricing context helpers
   const isPremiumLength = createMemo(() => {
     const len = name().length
-    return len >= 1 && len <= 4
+    return len >= 2 && len <= 4
   })
 
   const isFreeEligible = createMemo(() => {
     const len = name().length
-    return isOffchainTld(selectedTld()) && len >= 5
+    return len >= 5
   })
-
-  const isOffchain = createMemo(() => isOffchainTld(selectedTld()))
 
   // TLD options with pricing
   const tldOptions = createMemo(() => {
@@ -558,10 +537,10 @@ export function useNameRegistry(
       const config = configs[id]
       // Use forDisplay=true to show prices even for short names
       const priceWei = config
-        ? calculatePriceLocal(config, currentName || 'xxxxx', 1, id, true)
+        ? calculatePriceLocal(config, currentName || 'xxxxx', 1, true)
         : BigInt(0)
 
-      // For display, treat zero-price as free to avoid "Free/year"
+      // For display, treat zero-price as free
       const isFree = priceWei === BigInt(0)
 
       return {
@@ -589,7 +568,6 @@ export function useNameRegistry(
     isChecking,
     isPremiumLength,
     isFreeEligible,
-    isOffchainTld: isOffchain,
     status,
     tldOptions,
   }

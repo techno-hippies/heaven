@@ -6,10 +6,26 @@ import {MultiTldSubnameRegistrarV3} from "../src/MultiTldSubnameRegistrarV3.sol"
 import {RecordsV2} from "../src/RecordsV2.sol";
 
 contract DeployV3Script is Script {
+    // TLD labels (emoji without VS16)
     string constant TLD_HEAVEN = "heaven";
+    string constant TLD_STAR = unicode"⭐";
+    string constant TLD_SPIRAL = unicode"🌀";
 
     // Root TLD under which all subnames live
     string constant ROOT_TLD = "hnsbridge.eth";
+
+    // Pricing: 0.01 ETH base (used with length multipliers)
+    // With lengthPricingEnabled=true:
+    //   - 5+ chars: FREE (multiplier = 0)
+    //   - 4 chars: 0.02 ETH/yr (mult4 = 2)
+    //   - 3 chars: 0.05 ETH/yr (mult3 = 5)
+    //   - 2 chars: 0.1 ETH/yr (mult2 = 10)
+    //   - 1 char: BLOCKED by minLabelLength
+    uint256 constant BASE_PRICE_PER_YEAR = 0.01 ether;
+    uint16 constant MULT_2_CHAR = 10;  // 0.1 ETH/yr
+    uint16 constant MULT_3_CHAR = 5;   // 0.05 ETH/yr
+    uint16 constant MULT_4_CHAR = 2;   // 0.02 ETH/yr
+    // 5+ chars = FREE (contract returns mult=0)
 
     // Reserved labels (brand protection)
     string[] internal defaultReserved = [
@@ -22,8 +38,10 @@ contract DeployV3Script is Script {
         address owner = vm.envOr("OWNER", msg.sender);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        // Compute parentNode for .heaven
+        // Compute parentNodes for each TLD
         bytes32 nodeHeaven = _namehash(TLD_HEAVEN, ROOT_TLD);
+        bytes32 nodeStar = _namehash(TLD_STAR, ROOT_TLD);
+        bytes32 nodeSpiral = _namehash(TLD_SPIRAL, ROOT_TLD);
 
         console2.log("========================================");
         console2.log("Deploying MultiTldSubnameRegistrarV3");
@@ -31,9 +49,19 @@ contract DeployV3Script is Script {
         console2.log("Root TLD:", ROOT_TLD);
         console2.log("Owner:", owner);
         console2.log("");
-        console2.log("TLD Configuration:");
-        console2.log("  heaven.hnsbridge.eth (FREE)");
+        console2.log("TLD Configurations (all same pricing):");
+        console2.log("  - 5+ chars: FREE");
+        console2.log("  - 4 chars: 0.02 ETH/yr");
+        console2.log("  - 3 chars: 0.05 ETH/yr");
+        console2.log("  - 2 chars: 0.1 ETH/yr");
+        console2.log("  - 1 char: BLOCKED");
+        console2.log("");
+        console2.log("  heaven.hnsbridge.eth");
         console2.log("    parentNode:", vm.toString(nodeHeaven));
+        console2.log(unicode"  ⭐.hnsbridge.eth");
+        console2.log("    parentNode:", vm.toString(nodeStar));
+        console2.log(unicode"  🌀.hnsbridge.eth");
+        console2.log("    parentNode:", vm.toString(nodeSpiral));
         console2.log("========================================");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -53,27 +81,23 @@ contract DeployV3Script is Script {
         registrar.setRecords(address(records));
         console2.log("Records linked to Registrar");
 
-        // Configure TLD: heaven (FREE, min 4 chars, 1 year max)
-        registrar.configureTld(
-            nodeHeaven,
-            TLD_HEAVEN,
-            0,              // pricePerYear = 0 (free)
-            4,              // minLabelLength = 4
-            365 days,       // maxDuration = 1 year
-            false,          // registrationsOpen = false (open later)
-            false,          // lengthPricingEnabled = false
-            0, 0, 0, 0,     // no length multipliers
-            address(0)      // no TLD admin
-        );
-        console2.log("Configured TLD: heaven (FREE)");
-
-        // Set reserved labels
+        // Pre-compute reserved hashes (used for all TLDs)
         bytes32[] memory reservedHashes = new bytes32[](defaultReserved.length);
         for (uint256 i = 0; i < defaultReserved.length; i++) {
             reservedHashes[i] = keccak256(bytes(defaultReserved[i]));
         }
-        registrar.setReservedHashes(nodeHeaven, reservedHashes, true);
-        console2.log("Reserved", defaultReserved.length, "labels");
+
+        // Configure TLD: .heaven
+        _configureTld(registrar, nodeHeaven, TLD_HEAVEN, reservedHashes);
+        console2.log("Configured TLD: .heaven");
+
+        // Configure TLD: .star
+        _configureTld(registrar, nodeStar, TLD_STAR, reservedHashes);
+        console2.log(unicode"Configured TLD: .⭐");
+
+        // Configure TLD: .spiral
+        _configureTld(registrar, nodeSpiral, TLD_SPIRAL, reservedHashes);
+        console2.log(unicode"Configured TLD: .🌀");
 
         vm.stopBroadcast();
 
@@ -84,18 +108,41 @@ contract DeployV3Script is Script {
         console2.log("  Registrar:", address(registrar));
         console2.log("  RecordsV2:", address(records));
         console2.log("");
-        console2.log("TLD Parent Node:");
+        console2.log("TLD Parent Nodes:");
         console2.log("  HEAVEN:", vm.toString(nodeHeaven));
+        console2.log("  STAR:", vm.toString(nodeStar));
+        console2.log("  SPIRAL:", vm.toString(nodeSpiral));
         console2.log("");
         console2.log("Registrations are CLOSED by default.");
         console2.log("");
-        console2.log("Next steps:");
-        console2.log("1. Set ENS resolver for heaven.hnsbridge.eth to your Resolver contract");
-        console2.log("2. Open registrations:");
+        console2.log("To open registrations for a TLD:");
         console2.log(string.concat(
-            "   cast send ", vm.toString(address(registrar)),
-            " 'setRegistrationsOpen(bytes32,bool)' ", vm.toString(nodeHeaven), " true"
+            "  cast send ", vm.toString(address(registrar)),
+            " 'setRegistrationsOpen(bytes32,bool)' <parentNode> true"
         ));
+    }
+
+    function _configureTld(
+        MultiTldSubnameRegistrarV3 registrar,
+        bytes32 parentNode,
+        string memory parentName,
+        bytes32[] memory reservedHashes
+    ) internal {
+        registrar.configureTld(
+            parentNode,
+            parentName,
+            BASE_PRICE_PER_YEAR,  // 0.01 ETH base
+            2,                    // minLabelLength = 2 (blocks 1-char)
+            365 days,             // maxDuration = 1 year
+            false,                // registrationsOpen = false (open later)
+            true,                 // lengthPricingEnabled = true
+            0,                    // lengthMult1 = 0 (blocked by minLength anyway)
+            MULT_2_CHAR,          // lengthMult2 = 10 (0.1 ETH)
+            MULT_3_CHAR,          // lengthMult3 = 5 (0.05 ETH)
+            MULT_4_CHAR,          // lengthMult4 = 2 (0.02 ETH)
+            address(0)            // no TLD admin
+        );
+        registrar.setReservedHashes(parentNode, reservedHashes, true);
     }
 
     /// @notice Compute namehash for parentName.rootTld

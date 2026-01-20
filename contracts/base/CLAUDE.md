@@ -17,7 +17,7 @@ All non-FHE contracts deployed to Base. Uses Foundry toolchain.
 
 ### What This Does
 
-Users pick a username like `alex.heaven`. This contract:
+Users pick a username like `alex.heaven`, `luna.⭐`, or `cosmic.🌀`. This contract:
 
 1. **Mints an NFT** for the name (you own `alex.heaven` as an ERC-721 token)
 2. **Stores records** (your wallet address, profile link, etc.)
@@ -57,13 +57,25 @@ Users pick a username like `alex.heaven`. This contract:
 
 Owner can mint reserved names via `adminRegister()`.
 
+### Pricing (Same for All 3 TLDs)
+
+| Length | Price/year |
+|--------|------------|
+| 5+ chars | FREE |
+| 4 chars | 0.02 ETH |
+| 3 chars | 0.05 ETH |
+| 2 chars | 0.1 ETH |
+| 1 char | BLOCKED |
+
 ### Contract Settings
 
 ```
-pricePerYear = 0            (free)
-minLabelLength = 4          (blocks 1-3 char names)
+pricePerYear = 0.01 ETH     (base, multiplied by length)
+minLabelLength = 2          (blocks 1-char names)
 maxDuration = 1 year        (prevents forever locks)
 gracePeriod = 90 days       (owner can renew after expiry)
+lengthPricingEnabled = true
+lengthMult2 = 10, lengthMult3 = 5, lengthMult4 = 2
 ```
 
 ## Key Functions

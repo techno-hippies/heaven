@@ -148,10 +148,31 @@ import { onboardingStepOrder } from './config'
 
 Optimistic minting - user doesn't wait:
 1. User clicks "Next" on preview step
-2. Mint transaction fires in background
+2. Mint transaction fires in background via `setBasicsFor()` sponsor flow
 3. User immediately advances to Phase 2
 4. If mint fails: show non-blocking toast/banner with retry
 5. If mint succeeds: silent (profile active)
+
+### FHE Encryption (Client-Side)
+
+Profile values are encrypted using `@zama-fhe/relayer-sdk` before calling the Lit Action:
+
+```typescript
+import { createInstance } from "@zama-fhe/relayer-sdk/node";
+
+const fhevm = await createInstance({ ...SepoliaConfig });
+const input = fhevm.createEncryptedInput(CONTRACT_ADDRESS, userAddress);
+input.add8(BigInt(age));
+input.add8(BigInt(genderId));
+input.add16(BigInt(desiredMask));
+input.addBool(shareAge);
+input.addBool(shareGender);
+
+const { handles, inputProof } = await input.encrypt();
+// Pass handles + inputProof to Lit Action
+```
+
+The Lit Action then signs EIP-712 authorization with user's PKP and broadcasts via sponsor PKP.
 
 ## Routing
 
@@ -224,9 +245,10 @@ wrangler d1 execute heaven-api --local --file=./scripts/seed.sql --yes
 - [x] Multiple source support (dateme, cuties, acx)
 - [x] Test seed data with claim tokens
 - [x] Onboarding auth gate - prompts passkey sign-in before flow starts
+- [x] FHE sponsorship backend - `DatingV3.setBasicsFor()` + Lit Action tested on Sepolia
 
 ### Next Steps
-1. **Onboarding contract mint** - After Phase 1, mint on-chain profile (optimistic)
+1. **Integrate FHE into onboarding** - Wire Phase 1 to call sponsor Lit Action with encrypted values
 2. **Home page** - Show feed of profiles (shadow + claimed)
 3. **Like/match flow** - Wire liking to API, handle mutual matches
 4. **XMTP messaging** - Enable chat on mutual match

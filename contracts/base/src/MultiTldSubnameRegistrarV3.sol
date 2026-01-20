@@ -537,7 +537,8 @@ contract MultiTldSubnameRegistrarV3 is ERC721, Ownable, ReentrancyGuard {
         if (len == 2) return cfg.lengthMult2;
         if (len == 3) return cfg.lengthMult3;
         if (len == 4) return cfg.lengthMult4;
-        return 1;
+        // 5+ chars: free when length pricing is enabled (multiplier = 0)
+        return 0;
     }
 
     function _calculatePrice(TldConfig storage cfg, string memory label, uint256 duration) internal view returns (uint256) {

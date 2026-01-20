@@ -4,6 +4,7 @@ import { OnboardingFlow } from '@/features/onboarding/OnboardingFlow'
 import { onboardingStepOrder, type OnboardingStepId, type OnboardingPhase } from '@/features/onboarding/config'
 import { useAuth } from '@/app/providers/AuthContext'
 import { registerHeavenName } from '@/lib/names-api'
+import { callDatingSetBasicsSponsor } from '@/lib/fhe'
 import type { StepData } from '@/features/onboarding/types'
 import { Spinner } from '@/ui/spinner'
 import { Button } from '@/ui/button'
@@ -89,10 +90,28 @@ export const OnboardingPage: Component = () => {
           console.error('[Onboarding] .heaven registration error:', err)
         })
 
-      // TODO: Fire DatingV3.setBasics() Lit Action
-      // - Encrypt age/gender/desiredMask with Zama FHE SDK
-      // - Call dating-setbasics-sponsor-v1 Lit Action
-      if (IS_DEV) console.log('[Onboarding] TODO: Call DatingV3.setBasics() Lit Action')
+      // Fire DatingV3.setBasicsFor() via Lit Action (non-blocking)
+      // Encrypts profile with Zama FHE, sponsor PKP pays gas
+      const age = data.age as string | undefined
+      const gender = data.gender as string | undefined
+      const interestedIn = data.interestedIn as string[] | undefined
+
+      if (age && gender && interestedIn?.length) {
+        callDatingSetBasicsSponsor(pkpInfo, authData, { age, gender, interestedIn })
+          .then((result) => {
+            if (result.success) {
+              if (IS_DEV) console.log('[Onboarding] FHE profile created:', result.txHash)
+            } else {
+              console.error('[Onboarding] FHE profile creation failed:', result.error)
+              // TODO: Show non-blocking toast/banner with retry
+            }
+          })
+          .catch((err) => {
+            console.error('[Onboarding] FHE profile creation error:', err)
+          })
+      } else {
+        console.error('[Onboarding] Missing Phase 1 data for FHE profile:', { age, gender, interestedIn })
+      }
     }
 
     if (phase === 2) {
