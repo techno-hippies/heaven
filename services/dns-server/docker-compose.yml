@@ -54,6 +54,10 @@ services:
       - HMAC_SECRET=${HMAC_SECRET}
       - JWT_SECRET=${JWT_SECRET}
       - AUTH_DOMAIN=${AUTH_DOMAIN:-hp-dns-gw.local}
+      # .heaven TLD resolution
+      - HEAVEN_API_URL=${HEAVEN_API_URL:-https://heaven-api.deletion-backup782.workers.dev}
+      - HEAVEN_DNS_SECRET=${HEAVEN_DNS_SECRET}
+      - HEAVEN_GATEWAY_IP=${HEAVEN_GATEWAY_IP:-144.126.205.242}
     depends_on:
       - wireguard
       - resolver

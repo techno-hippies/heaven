@@ -59,12 +59,13 @@ pub async fn handle_query(state: &Arc<AppState>, pkt: Vec<u8>, src_ip: IpAddr) -
             let latency_ms = start.elapsed().as_millis() as u32;
 
             // Queue event for Tinybird (mark as "heaven" action)
+            // Use etld1 (registrable domain) for consistency with other events
             let event = DnsEvent {
                 ts: chrono::Utc::now(),
                 wallet_id: wallet_id.clone(),
                 device_id,
-                etld1: qname_norm.clone(),
-                domain_hmac: state.tinybird.hmac_domain(&qname_norm, &state.config.hmac_secret),
+                etld1: etld1.clone(),
+                domain_hmac: state.tinybird.hmac_domain(&etld1, &state.config.hmac_secret),
                 qtype: format!("{:?}", qtype),
                 action: "heaven".to_string(),
                 category_id: None,
@@ -75,7 +76,7 @@ pub async fn handle_query(state: &Arc<AppState>, pkt: Vec<u8>, src_ip: IpAddr) -
             tracing::debug!(
                 "{} -> {} ({:?}) [heaven] {}ms",
                 src_ip,
-                qname_norm,
+                etld1,
                 qtype,
                 latency_ms
             );

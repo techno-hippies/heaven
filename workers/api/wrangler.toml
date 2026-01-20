@@ -9,16 +9,13 @@ ENVIRONMENT = "development"
 [[d1_databases]]
 binding = "DB"
 database_name = "heaven-api"
-database_id = "TODO_CREATE_DATABASE"
-
-# For production, create database with:
-# wrangler d1 create heaven-api
-# Then update database_id above
+database_id = "6c7c6c73-29c5-4886-b511-3bf4332bca09"
 
 [env.production]
 vars = { ENVIRONMENT = "production" }
 
+# Production uses same database (single environment for now)
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "heaven-api-prod"
-database_id = "TODO_CREATE_PROD_DATABASE"
+database_name = "heaven-api"
+database_id = "6c7c6c73-29c5-4886-b511-3bf4332bca09"

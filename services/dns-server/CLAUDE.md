@@ -311,6 +311,34 @@ dig @10.13.13.1 _443._tcp.shakestation TLSA +short  # → TLSA record
 
 **Current recommendation:** Use dotted Handshake domains (subdomains) or access via curl/CLI.
 
+### .heaven TLD Resolution (IMPLEMENTED)
+
+The dns-server now intercepts queries for `.heaven` TLD and resolves them via the Heaven Names API.
+
+**Environment Variables:**
+```bash
+HEAVEN_API_URL=https://api.heaven.xyz   # Heaven Worker API base URL
+HEAVEN_DNS_SECRET=xxx                    # Bearer token (must match Worker's DNS_SHARED_SECRET)
+HEAVEN_GATEWAY_IP=144.126.205.242        # Gateway IP for A records (optional, this is default)
+```
+
+**Behavior:**
+| Query | Result |
+|-------|--------|
+| `foo.heaven` (active) | NOERROR with A + TXT records |
+| `foo.heaven` (expired/unregistered) | NXDOMAIN with SOA |
+| `foo.bar.heaven` (multi-level) | NXDOMAIN |
+| `heaven` (apex) | NOERROR with gateway A record |
+| API error | SERVFAIL (fail closed) |
+
+**Features:**
+- Positive caching (300s) and negative caching (60s) from API response
+- Request coalescing to prevent stampedes
+- EDNS preservation for larger UDP responses
+- Proper DNS flags (AA=false, RA=true, RD preserved)
+
+**Files:** `src/dns/heaven.rs`, `src/config.rs`
+
 ### Not Yet Implemented
 - Interest vector calculation
 - User matching algorithm

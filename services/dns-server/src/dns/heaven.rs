@@ -183,9 +183,10 @@ impl HeavenResolver {
         let _guard = lock.lock().await;
 
         // Re-check cache after acquiring lock (another request may have populated it)
+        // Note: Do NOT remove inflight here - let the leader (who populated cache) clean up.
+        // Removing here would allow new arrivals to create a new mutex and cause stampede.
         if let Some(hit) = self.cache.get(label) {
             if Instant::now() < hit.expires_at {
-                self.inflight.remove(&key);
                 return build_from_resolved(request, label, qtype, &hit.resolved);
             }
         }
@@ -371,8 +372,13 @@ fn base_response(request: &Message) -> Message {
     resp.set_recursion_available(true);
     resp.set_recursion_desired(request.recursion_desired());
 
-    // Copy query section
-    for q in request.queries() {
+    // Preserve EDNS if present (for larger UDP size, DO bit, etc.)
+    if let Some(edns) = request.edns() {
+        resp.set_edns(edns.clone());
+    }
+
+    // Copy first query only (consistent with other response builders)
+    if let Some(q) = request.queries().first() {
         resp.add_query(Query::query(q.name().clone(), q.query_type()));
     }
 
