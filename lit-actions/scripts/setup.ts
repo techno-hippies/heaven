@@ -71,6 +71,12 @@ const ACTIONS: Record<string, ActionDef> = {
     displayName: 'Dating SetBasics v1',
     keys: [], // No keys needed - user pays gas
   },
+  datingSetbasicsSponsor: {
+    name: 'datingSetbasicsSponsor',
+    path: 'actions/dating-setbasics-sponsor-v1.js',
+    displayName: 'Dating SetBasics Sponsor v1',
+    keys: [], // No keys needed - sponsor PKP pays gas
+  },
 };
 
 // Parse CLI args

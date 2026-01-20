@@ -37,6 +37,7 @@ interface CIDs {
   scrobble: string;
   profilePin: string;
   datingSetbasics: string;
+  datingSetbasicsSponsor: string;
   [key: string]: string;
 }
 
@@ -66,7 +67,7 @@ if (!envConfig) {
 
 // Load CIDs
 const cidPath = join(ROOT_DIR, envConfig.cidFile);
-let cids: CIDs = { survey: '', scrobble: '', profilePin: '', datingSetbasics: '' };
+let cids: CIDs = { survey: '', scrobble: '', profilePin: '', datingSetbasics: '', datingSetbasicsSponsor: '' };
 if (existsSync(cidPath)) {
   cids = JSON.parse(readFileSync(cidPath, 'utf-8'));
 }

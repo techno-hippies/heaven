@@ -140,12 +140,13 @@ contract DatingV3 is ZamaEthereumConfig {
         directory = _directory;
         oracle = _oracle;
         relayer = _relayer;
+        setBasicsSponsor = _relayer; // Default sponsor to relayer; can be changed via setSetBasicsSponsor
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 EIP712_DOMAIN_TYPEHASH,
-                keccak256("Heaven"),
-                keccak256("3"),
+                keccak256(bytes("Heaven")),
+                keccak256(bytes("3")),
                 block.chainid,
                 address(this)
             )
@@ -153,6 +154,22 @@ contract DatingV3 is ZamaEthereumConfig {
     }
 
     // -------------------- Profile setup --------------------
+
+    // EIP-712 typehash for setBasicsFor authorization
+    bytes32 public constant SET_BASICS_TYPEHASH = keccak256(
+        "SetBasics(address user,bytes32 dataHash,uint64 deadline,uint64 nonce)"
+    );
+
+    // Nonces for setBasicsFor replay protection
+    mapping(address => uint64) public setBasicsNonce;
+
+    // Separate sponsor role for setBasicsFor (can be same as relayer if desired)
+    address public setBasicsSponsor;
+
+    modifier onlySetBasicsSponsor() {
+        require(msg.sender == setBasicsSponsor, "Only setBasics sponsor");
+        _;
+    }
 
     /// @notice Set minimal encrypted profile + preference state
     /// @dev If user is already verified, age is oracle-owned; claimedAge is ignored.
@@ -164,8 +181,88 @@ contract DatingV3 is ZamaEthereumConfig {
         externalEbool shareGender,
         bytes calldata proof
     ) external {
-        address user = msg.sender;
+        _setBasicsInternal(
+            msg.sender,
+            claimedAge,
+            genderId,
+            desiredMask,
+            shareAge,
+            shareGender,
+            proof
+        );
+    }
 
+    /// @notice Set profile on behalf of user (sponsored/gasless)
+    /// @dev User signs EIP-712 message authorizing this call; sponsor pays gas
+    /// @param user The user whose profile to set
+    /// @param claimedAge FHE-encrypted age (ignored if user is verified)
+    /// @param genderId FHE-encrypted gender identity (1-5)
+    /// @param desiredMask FHE-encrypted 5-bit gender preference mask
+    /// @param shareAge FHE-encrypted bool for sharing age on match
+    /// @param shareGender FHE-encrypted bool for sharing gender on match
+    /// @param proof FHE input proof
+    /// @param deadline Unix timestamp after which signature is invalid
+    /// @param userSig User's EIP-712 signature authorizing this update
+    function setBasicsFor(
+        address user,
+        externalEuint8 claimedAge,
+        externalEuint8 genderId,
+        externalEuint16 desiredMask,
+        externalEbool shareAge,
+        externalEbool shareGender,
+        bytes calldata proof,
+        uint64 deadline,
+        bytes calldata userSig
+    ) external onlySetBasicsSponsor {
+        require(block.timestamp <= deadline, "Signature expired");
+
+        // Build data hash from encrypted inputs using abi.encode (no packing ambiguity)
+        bytes32 dataHash = keccak256(abi.encode(
+            claimedAge,
+            genderId,
+            desiredMask,
+            shareAge,
+            shareGender,
+            keccak256(proof)
+        ));
+
+        uint64 nonce = setBasicsNonce[user];
+
+        // Verify EIP-712 signature
+        bytes32 structHash = keccak256(abi.encode(
+            SET_BASICS_TYPEHASH,
+            user,
+            dataHash,
+            deadline,
+            nonce
+        ));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        require(digest.recover(userSig) == user, "Invalid signature");
+
+        // Increment nonce for replay protection
+        setBasicsNonce[user] = nonce + 1;
+
+        _setBasicsInternal(
+            user,
+            claimedAge,
+            genderId,
+            desiredMask,
+            shareAge,
+            shareGender,
+            proof
+        );
+    }
+
+    /// @dev Internal implementation shared by setBasics and setBasicsFor
+    function _setBasicsInternal(
+        address user,
+        externalEuint8 claimedAge,
+        externalEuint8 genderId,
+        externalEuint16 desiredMask,
+        externalEbool shareAge,
+        externalEbool shareGender,
+        bytes calldata proof
+    ) internal {
         if (!isVerified[user]) {
             encAge[user] = FHE.fromExternal(claimedAge, proof);
             FHE.allowThis(encAge[user]);
@@ -303,7 +400,7 @@ contract DatingV3 is ZamaEthereumConfig {
         PendingMatch memory pending = pendingMatches[pairKey];
         require(pending.user1 != address(0), "No pending match");
 
-        bytes32;
+        bytes32[] memory handles = new bytes32[](1);
         handles[0] = FHE.toBytes32(pending.mutualOkHandle);
         FHE.checkSignatures(handles, abi.encode(isMutualOk), decryptionProof);
 
@@ -454,6 +551,10 @@ contract DatingV3 is ZamaEthereumConfig {
 
     function setRelayer(address _relayer) external onlyAdmin {
         relayer = _relayer;
+    }
+
+    function setSetBasicsSponsor(address _sponsor) external onlyAdmin {
+        setBasicsSponsor = _sponsor;
     }
 
     function setDirectory(address _directory) external onlyAdmin {

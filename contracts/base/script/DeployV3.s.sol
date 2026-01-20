@@ -6,22 +6,10 @@ import {MultiTldSubnameRegistrarV3} from "../src/MultiTldSubnameRegistrarV3.sol"
 import {RecordsV2} from "../src/RecordsV2.sol";
 
 contract DeployV3Script is Script {
-    // Canonical emoji forms (without VS16)
     string constant TLD_HEAVEN = "heaven";
-    string constant TLD_STAR = unicode"⭐";
-    string constant TLD_SPIRAL = unicode"🌀";
 
     // Root TLD under which all subnames live
     string constant ROOT_TLD = "hnsbridge.eth";
-
-    // Pricing: 0.003 ETH/year base for paid TLDs (~$10 at $3300/ETH)
-    uint256 constant PAID_PRICE_PER_YEAR = 0.003 ether;
-
-    // Length multipliers for paid TLDs
-    uint16 constant MULT_1_CHAR = 100; // 100x = $1000/yr
-    uint16 constant MULT_2_CHAR = 50;  // 50x = $500/yr
-    uint16 constant MULT_3_CHAR = 10;  // 10x = $100/yr
-    uint16 constant MULT_4_CHAR = 3;   // 3x = $30/yr
 
     // Reserved labels (brand protection)
     string[] internal defaultReserved = [
@@ -34,10 +22,8 @@ contract DeployV3Script is Script {
         address owner = vm.envOr("OWNER", msg.sender);
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        // Compute parentNodes for each TLD
+        // Compute parentNode for .heaven
         bytes32 nodeHeaven = _namehash(TLD_HEAVEN, ROOT_TLD);
-        bytes32 nodeStar = _namehash(TLD_STAR, ROOT_TLD);
-        bytes32 nodeSpiral = _namehash(TLD_SPIRAL, ROOT_TLD);
 
         console2.log("========================================");
         console2.log("Deploying MultiTldSubnameRegistrarV3");
@@ -45,13 +31,9 @@ contract DeployV3Script is Script {
         console2.log("Root TLD:", ROOT_TLD);
         console2.log("Owner:", owner);
         console2.log("");
-        console2.log("TLD Configurations:");
-        console2.log("  heaven.hnsbridge.eth (OFFCHAIN, CCIP)");
+        console2.log("TLD Configuration:");
+        console2.log("  heaven.hnsbridge.eth (FREE)");
         console2.log("    parentNode:", vm.toString(nodeHeaven));
-        console2.log(unicode"  ⭐.hnsbridge.eth (PAID, length pricing)");
-        console2.log("    parentNode:", vm.toString(nodeStar));
-        console2.log(unicode"  🌀.hnsbridge.eth (PAID, length pricing)");
-        console2.log("    parentNode:", vm.toString(nodeSpiral));
         console2.log("========================================");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -71,42 +53,27 @@ contract DeployV3Script is Script {
         registrar.setRecords(address(records));
         console2.log("Records linked to Registrar");
 
-        // Configure TLD: star (PAID with length pricing)
+        // Configure TLD: heaven (FREE, min 4 chars, 1 year max)
         registrar.configureTld(
-            nodeStar,
-            TLD_STAR,
-            PAID_PRICE_PER_YEAR,
-            1,              // minLabelLength = 1 (allow short names at premium)
-            3 * 365 days,   // maxDuration = 3 years
-            true,           // registrationsOpen = true
-            true,           // lengthPricingEnabled = true
-            MULT_1_CHAR, MULT_2_CHAR, MULT_3_CHAR, MULT_4_CHAR,
+            nodeHeaven,
+            TLD_HEAVEN,
+            0,              // pricePerYear = 0 (free)
+            4,              // minLabelLength = 4
+            365 days,       // maxDuration = 1 year
+            false,          // registrationsOpen = false (open later)
+            false,          // lengthPricingEnabled = false
+            0, 0, 0, 0,     // no length multipliers
             address(0)      // no TLD admin
         );
-        console2.log(unicode"Configured TLD: ⭐ (PAID, length pricing)");
+        console2.log("Configured TLD: heaven (FREE)");
 
-        // Configure TLD: spiral (PAID with length pricing)
-        registrar.configureTld(
-            nodeSpiral,
-            TLD_SPIRAL,
-            PAID_PRICE_PER_YEAR,
-            1,              // minLabelLength = 1
-            3 * 365 days,   // maxDuration = 3 years
-            true,           // registrationsOpen = true
-            true,           // lengthPricingEnabled = true
-            MULT_1_CHAR, MULT_2_CHAR, MULT_3_CHAR, MULT_4_CHAR,
-            address(0)      // no TLD admin
-        );
-        console2.log(unicode"Configured TLD: 🌀 (PAID, length pricing)");
-
-        // Set reserved labels for paid TLDs only
+        // Set reserved labels
         bytes32[] memory reservedHashes = new bytes32[](defaultReserved.length);
         for (uint256 i = 0; i < defaultReserved.length; i++) {
             reservedHashes[i] = keccak256(bytes(defaultReserved[i]));
         }
-        registrar.setReservedHashes(nodeStar, reservedHashes, true);
-        registrar.setReservedHashes(nodeSpiral, reservedHashes, true);
-        console2.log("Reserved", defaultReserved.length, "labels on paid TLDs");
+        registrar.setReservedHashes(nodeHeaven, reservedHashes, true);
+        console2.log("Reserved", defaultReserved.length, "labels");
 
         vm.stopBroadcast();
 
@@ -117,22 +84,18 @@ contract DeployV3Script is Script {
         console2.log("  Registrar:", address(registrar));
         console2.log("  RecordsV2:", address(records));
         console2.log("");
-        console2.log("TLD Parent Nodes:");
-        console2.log("  HEAVEN (offchain resolver):", vm.toString(nodeHeaven));
-        console2.log("  STAR (paid):", vm.toString(nodeStar));
-        console2.log("  SPIRAL (paid):", vm.toString(nodeSpiral));
+        console2.log("TLD Parent Node:");
+        console2.log("  HEAVEN:", vm.toString(nodeHeaven));
         console2.log("");
-        console2.log("Registrations are OPEN for paid TLDs.");
+        console2.log("Registrations are CLOSED by default.");
         console2.log("");
-        console2.log("Add to app/.env (paid TLDs only):");
-        console2.log(string.concat("VITE_NAME_REGISTRY_ADDRESS=", vm.toString(address(registrar))));
-        console2.log(string.concat("VITE_NAME_REGISTRY_RECORDS=", vm.toString(address(records))));
-        console2.log(string.concat("VITE_TLD_NODE_STAR=", vm.toString(nodeStar)));
-        console2.log(string.concat("VITE_TLD_NODE_SPIRAL=", vm.toString(nodeSpiral)));
-        console2.log("");
-        console2.log("Offchain (.heaven) setup reminder:");
-        console2.log("  Set ENS resolver for heaven.hnsbridge.eth to your OffchainResolver");
-        console2.log("  (OffchainResolver should support ENSIP-10 + CCIP-Read)");
+        console2.log("Next steps:");
+        console2.log("1. Set ENS resolver for heaven.hnsbridge.eth to your Resolver contract");
+        console2.log("2. Open registrations:");
+        console2.log(string.concat(
+            "   cast send ", vm.toString(address(registrar)),
+            " 'setRegistrationsOpen(bytes32,bool)' ", vm.toString(nodeHeaven), " true"
+        ));
     }
 
     /// @notice Compute namehash for parentName.rootTld
