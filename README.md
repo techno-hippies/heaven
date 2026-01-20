@@ -33,7 +33,8 @@ Privacy-first dating with encrypted compatibility matching, decentralized identi
 | [Tinybird](https://tinybird.co/) (ClickHouse) | DNS analytics pipeline |
 | [Agora](https://agora.io/) | WebRTC for real-time voice chat |
 | [ElevenLabs](https://elevenlabs.io/) | TTS for AI companion (Scarlett) |
-| [Groq](https://groq.com/) | LLM inference for AI chat |
+| [Groq](https://groq.com/) | LLM inference for real-time voice |
+| [Honcho](https://honcho.dev/) | Cross-session memory for AI conversations |
 
 ## Architecture
 
@@ -129,6 +130,33 @@ Sponsored transactions without server-held private keys. Running on **Naga dev**
 | FHE profile | Sponsor pays gas for DatingV3.setBasicsFor() |
 
 Sponsor PKP: `0x089fc7801D8f7D487765343a7946b1b97A7d29D4`
+
+## AI Chat (Scarlett)
+
+Scarlett is the AI dating coach - available via text chat and real-time voice.
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Client     │────▶│  Voice Worker    │────▶│  Agora CAI      │
+│  (WebRTC)   │     │  (CF Worker)     │     │  (Conversational│
+│             │◀────│                  │◀────│   AI)           │
+└─────────────┘     └────────┬─────────┘     └────────┬────────┘
+                             │                        │
+                    ┌────────▼─────────┐     ┌────────▼────────┐
+                    │  Honcho          │     │  LLM + TTS      │
+                    │  (memory)        │     │  Groq/ElevenLabs│
+                    └──────────────────┘     └─────────────────┘
+```
+
+| Component | Purpose |
+|-----------|---------|
+| **Agora CAI** | WebRTC voice with built-in STT, manages conversation flow |
+| **ElevenLabs** | Text-to-speech for Scarlett's voice |
+| **Groq** | Fast LLM inference for real-time responses |
+| **Honcho** | Cross-session memory - remembers user across conversations |
+| **Voice Worker** | Auth, session management, LLM proxy with context injection |
+
+**Text chat** uses the same LLM + Honcho stack without Agora/ElevenLabs.
 
 ## Development
 
