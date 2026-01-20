@@ -93,6 +93,9 @@ enum HeavenQName<'a> {
     NotHeaven,
 }
 
+/// API request timeout
+const API_TIMEOUT: Duration = Duration::from_millis(500);
+
 impl HeavenResolver {
     /// Create a new HeavenResolver
     ///
@@ -105,7 +108,10 @@ impl HeavenResolver {
             api_url: api_url.trim_end_matches('/').to_string(),
             bearer,
             gateway_ip,
-            http: Client::new(),
+            http: Client::builder()
+                .timeout(API_TIMEOUT)
+                .build()
+                .expect("Failed to build HTTP client"),
             cache: Arc::new(DashMap::new()),
             inflight: Arc::new(DashMap::new()),
         }
@@ -159,20 +165,20 @@ impl HeavenResolver {
 
     /// Handle a second-level domain query (e.g., foo.heaven)
     async fn handle_sld(&self, request: &Message, label: &str, qtype: RecordType) -> Vec<u8> {
-        let key = label.to_string();
+        // Normalize label to lowercase (DNS labels may come in any case)
+        let key = label.to_ascii_lowercase();
 
         // Check cache first (fast path)
-        if let Some(hit) = self.cache.get(label) {
+        if let Some(hit) = self.cache.get(&key) {
             if Instant::now() < hit.expires_at {
-                return build_from_resolved(request, label, qtype, &hit.resolved);
-            } else {
-                // Expired - remove stale entry
-                drop(hit);
-                self.cache.remove(label);
+                return build_from_resolved(request, &key, qtype, &hit.resolved);
             }
+            // Expired entries are cleaned up lazily below
         }
 
-        // Get or create coalescing lock for this label
+        // Get or create coalescing lock for this label.
+        // We never remove inflight entries - they're bounded by label cardinality
+        // and removing creates a race where new requests can create duplicate mutexes.
         let lock = self
             .inflight
             .entry(key.clone())
@@ -183,16 +189,17 @@ impl HeavenResolver {
         let _guard = lock.lock().await;
 
         // Re-check cache after acquiring lock (another request may have populated it)
-        // Note: Do NOT remove inflight here - let the leader (who populated cache) clean up.
-        // Removing here would allow new arrivals to create a new mutex and cause stampede.
-        if let Some(hit) = self.cache.get(label) {
+        if let Some(hit) = self.cache.get(&key) {
             if Instant::now() < hit.expires_at {
-                return build_from_resolved(request, label, qtype, &hit.resolved);
+                return build_from_resolved(request, &key, qtype, &hit.resolved);
             }
+            // Expired - remove stale entry before fetch
+            drop(hit);
+            self.cache.remove(&key);
         }
 
         // Fetch from API
-        let result = match self.fetch(label).await {
+        match self.fetch(&key).await {
             Ok(resolved) => {
                 // Determine cache TTL based on status
                 let ttl = match resolved.status {
@@ -211,20 +218,15 @@ impl HeavenResolver {
                     },
                 );
 
-                build_from_resolved(request, label, qtype, &resolved)
+                build_from_resolved(request, &key, qtype, &resolved)
             }
             Err(e) => {
-                tracing::warn!("Heaven API error for '{}': {}", label, e);
+                tracing::warn!("Heaven API error for '{}': {}", key, e);
                 // Fail closed: return SERVFAIL so clients retry
                 // Do NOT cache errors to avoid poisoning
                 build_servfail(request)
             }
-        };
-
-        // Clean up inflight entry to prevent memory leak
-        self.inflight.remove(&key);
-
-        result
+        }
     }
 
     /// Fetch name resolution from the Heaven Names API
